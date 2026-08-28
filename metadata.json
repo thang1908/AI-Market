@@ -1,0 +1,6 @@
+{
+  "name": "AI Bất Động Sản",
+  "description": "Nền tảng bất động sản thông minh với Trợ lý AI, Sàn giao dịch & Giỏ hàng sơ cấp Market, và Mạng xã hội Khám phá Cộng đồng BĐS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
