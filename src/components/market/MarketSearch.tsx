@@ -1,3 +1,8 @@
+/**
+ * @deprecated This component is no longer used.
+ * MarketPage.tsx now imports MarketAISearch.tsx instead.
+ * This file is kept temporarily for reference and should be removed in cleanup.
+ */
 import React, { useState, useEffect } from 'react';
 import { Search, Sparkles, X, ArrowRight, Tag } from 'lucide-react';
 import { useAppState } from '../../state/useAppState';

@@ -398,20 +398,22 @@ export type SocialPostType =
   | 'VIDEO';
 
 export type SocialFeedCategory = 
+  // Actively used in SocialPage topic tabs
   | 'ALL'
-  | 'FOR_YOU'
   | 'PROJECTS'
-  | 'PROJECT'
   | 'MARKET'
-  | 'PRICE'
-  | 'PLANNING'
-  | 'INFRASTRUCTURE'
-  | 'INVESTMENT'
   | 'LEGAL'
   | 'LISTINGS'
   | 'VIDEOS'
-  | 'VIDEO'
-  | 'LIFESTYLE';
+  | 'LIFESTYLE'
+  // Legacy/filter aliases — not used in UI topic tabs, candidates for removal
+  | 'FOR_YOU'
+  | 'PROJECT'    // duplicate of PROJECTS
+  | 'PRICE'      // subsumed by MARKET
+  | 'PLANNING'   // subsumed by LEGAL
+  | 'INFRASTRUCTURE' // subsumed by MARKET
+  | 'INVESTMENT' // no dedicated tab
+  | 'VIDEO';     // duplicate of VIDEOS
 
 export interface SocialPostComment {
   id: string;
