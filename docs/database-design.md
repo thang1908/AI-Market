@@ -3,10 +3,10 @@
 ## 1. Trạng thái và lựa chọn nền tảng
 
 - Trạng thái: **Proposed — chờ review**.
-- Hệ quản trị đề xuất: PostgreSQL managed, bật backup/PITR theo mục tiêu chưa được xác định tại OQ-045.
-- Một database logic cho modular monolith ở giai đoạn đầu; module sở hữu bảng của mình dù cùng schema vật lý.
-- Không dùng Redis/search index/object storage làm nguồn sự thật nghiệp vụ.
-- Schema dưới đây là logical design. Tên enum/reference code, retention, tenant key và một số nullable/required field chỉ được chốt sau khi các OQ P0 được trả lời.
+- Hệ quản trị đề xuất: PostgreSQL managed. Cần bật tính năng backup/PITR (khôi phục dữ liệu theo thời điểm) theo mục tiêu sẽ được chốt tại OQ-045.
+- Ở giai đoạn đầu, hệ thống dùng một database logic chung cho cấu trúc modular monolith (nguyên khối có module). Tuy nhiên, mỗi module vẫn tự quản lý các bảng của mình dù nằm chung một schema vật lý.
+- Không dùng Redis, search index (chỉ mục tìm kiếm) hoặc object storage (lưu trữ đối tượng) làm nguồn sự thật (source of truth) cho nghiệp vụ cốt lõi.
+- Schema dưới đây là thiết kế logic (logical design). Các chi tiết như tên enum, reference code, thời gian lưu trữ (retention), tenant key (khóa phân biệt khách hàng), và tính bắt buộc của một số trường chỉ được chốt sau khi các câu hỏi mở quan trọng (OQ P0) được giải quyết.
 
 ### 1.1 Mapping với mock UI hiện tại
 
@@ -30,19 +30,19 @@ Mock types (`src/types.ts`) dùng convention khác DB schema đề xuất. Bản
 
 | Chủ đề | Quy ước đề xuất |
 |---|---|
-| Primary key | UUID (`uuid`), sinh ở application hoặc database theo chuẩn được chọn |
+| Primary key | UUID (mã định danh duy nhất toàn cục, `uuid`), sinh ở application hoặc database theo chuẩn được chọn |
 | External identity | Cặp `source_id` + `external_id`, có unique constraint; không dùng ID đối tác làm PK |
-| Money | `bigint` số nguyên VND, tên `*_amount_vnd`; không lưu “triệu/tỷ” |
-| Decimal | `numeric(p,s)` cho diện tích, tọa độ, tỷ lệ; không dùng float cho tiền |
-| Time | `timestamptz` UTC; `effective_at`, `observed_at`, `published_at`, `created_at`, `updated_at` có nghĩa riêng |
-| Soft delete | Chỉ dùng khi cần retention/audit; `deleted_at` không thay thế status/lifecycle |
-| Version | `version integer` cho optimistic concurrency trên resource mutable quan trọng |
-| Flexible metadata | `jsonb` chỉ cho dữ liệu mở rộng không tham gia invariant cốt lõi; field cần filter/join phải là cột |
+| Money | `bigint` (số nguyên lớn) lưu số nguyên VND, tên `*_amount_vnd`; không lưu “triệu/tỷ” |
+| Decimal | `numeric(p,s)` (số thập phân chính xác cao) cho diện tích, tọa độ, tỷ lệ; không dùng float cho tiền |
+| Time | `timestamptz` (thời gian có kèm múi giờ) lưu múi giờ UTC; `effective_at`, `observed_at`, `published_at`, `created_at`, `updated_at` có nghĩa riêng |
+| Soft delete | Soft delete (xóa mềm - chỉ đánh dấu xóa chứ không xóa thật) chỉ dùng khi cần retention/audit; `deleted_at` không thay thế status/lifecycle |
+| Version | `version integer` cho optimistic concurrency (cơ chế khóa lạc quan) trên resource mutable (tài nguyên có thể thay đổi) quan trọng |
+| Flexible metadata | Dùng `jsonb` (dữ liệu JSON lưu trữ trong PostgreSQL) chỉ cho thông tin mở rộng, linh hoạt. Những trường cần lọc hoặc join (ví dụ: giá, quận, loại BDS) phải là cột riêng, không nhét vào JSON. |
 | Status | Code ổn định; state transition kiểm tra ở domain và database constraint phù hợp |
-| Text search | `tsvector`/GIN cho field đã chọn, dictionary/ngôn ngữ cần benchmark với tiếng Việt |
+| Text search | `tsvector`/GIN (kiểu dữ liệu và chỉ mục hỗ trợ tìm kiếm văn bản) cho field đã chọn, dictionary/ngôn ngữ cần benchmark với tiếng Việt |
 | Provenance | Dữ kiện quan trọng gắn `source_id`, `observed_at/effective_at`, verification/freshness metadata |
 
-Mọi bảng mutable có `created_at`, `updated_at`; các cột này được lược bớt khỏi bảng mô tả bên dưới để dễ đọc.
+Mọi bảng có dữ liệu thay đổi (mutable) đều có hai cột `created_at` và `updated_at`. Để lược bớt, các cột này sẽ không hiển thị trong các bảng mô tả chi tiết bên dưới.
 
 ## 3. Sơ đồ quan hệ tổng quan
 
@@ -106,11 +106,11 @@ erDiagram
 | `last_active_at` | timestamptz nullable | Không thay audit |
 | `deleted_at` | timestamptz nullable | Deletion/retention chờ policy |
 
-Nếu dùng nhiều auth provider, tạo `user_identities(user_identity_id, user_id, provider, provider_subject, verified_at)` với unique `(provider, provider_subject)` thay vì thêm nhiều cột vào `users`.
+Nếu hệ thống dùng nhiều dịch vụ xác thực (auth provider) như Google hay Facebook, ta nên tạo thêm bảng `user_identities(user_identity_id, user_id, provider, provider_subject, verified_at)`. Bảng này dùng khóa duy nhất (unique) cho cặp `(provider, provider_subject)` thay vì nhồi nhét nhiều cột vào bảng `users`.
 
 ### `organizations`
 
-Đại diện agency, developer, distributor hoặc tổ chức vận hành; không mặc định đồng nghĩa tenant.
+Bảng này đại diện cho các tổ chức như agency (đại lý), developer (chủ đầu tư), distributor (nhà phân phối), hoặc tổ chức vận hành. Tổ chức ở đây không mặc định tương đương với tenant (khách hàng thuê bao hệ thống).
 
 | Cột | Kiểu/constraint | Ghi chú |
 |---|---|---|
@@ -123,28 +123,34 @@ Nếu dùng nhiều auth provider, tạo `user_identities(user_identity_id, user
 
 ### `organization_memberships`
 
-`membership_id`, `organization_id` FK, `user_id` FK, `role_key`, `status`, `valid_from`, `valid_until`; unique active membership theo quy tắc được duyệt. `role_key` chưa chốt cho đến OQ-002.
+Bảng này lưu trữ thành viên của tổ chức. Các cột bao gồm `membership_id`, `organization_id` (FK - khóa ngoại — liên kết 2 bảng), `user_id` (FK), `role_key`, `status`, `valid_from`, và `valid_until`. Hệ thống cần một ràng buộc duy nhất (unique) để đảm bảo mỗi người dùng chỉ có một membership đang hiệu lực (active) tại một thời điểm theo quy tắc được duyệt. Danh sách các quyền `role_key` (ví dụ: ADMIN, EDITOR) sẽ được chốt tại OQ-002.
 
 ### `author_profiles`
 
-Một profile công khai thuộc đúng một user **hoặc** một organization.
+Mỗi hồ sơ công khai (author profile) chỉ được thuộc về đúng một người dùng (user) **hoặc** một tổ chức (organization). Không thể thuộc về cả hai.
 
-- `author_profile_id` PK.
-- `user_id` nullable FK, `organization_id` nullable FK.
-- CHECK đúng một owner khác null.
-- `handle` unique, `display_name`, `bio`, `avatar_media_id`, `specialties`, `visibility`.
-- `profile_type_code` giữ nhãn hồ sơ quan sát trong UI (`USER`, `SALE`, `CREATOR`, `AGENCY`, `DEVELOPER`, `OFFICIAL_APP`) sau khi taxonomy được duyệt; đây không phải authorization role.
-- Các count có thể là projection/cache (`followers_count`, `posts_count`) nhưng không là nguồn sự thật.
+- `author_profile_id` là PK (khóa chính).
+- `user_id` và `organization_id` là khóa ngoại có thể rỗng (nullable FK).
+- Dùng ràng buộc CHECK tại cơ sở dữ liệu để đảm bảo đúng một trong hai trường này có giá trị.
+- Các trường thông tin cơ bản: `handle` (tên định danh duy nhất, ví dụ: @nguyenvana), `display_name`, `bio`, `avatar_media_id`, `specialties`, `visibility`.
+- Trường `profile_type_code` để phân loại hồ sơ hiển thị trên UI (như `USER`, `SALE`, `CREATOR`, `AGENCY`, `DEVELOPER`, `OFFICIAL_APP`). Tập giá trị này chờ taxonomy được duyệt. Đây chỉ là nhãn hiển thị, không dùng làm vai trò phân quyền (authorization role).
+- Các cột đếm (như `followers_count`, `posts_count`) chỉ là dữ liệu cache (lưu trữ tạm thời để truy vấn nhanh). Chúng không phải là nguồn sự thật duy nhất (source of truth).
 
-`author_contact_methods` tách phone/email/Zalo khỏi profile: `contact_method_id`, `author_profile_id`, `method_type`, encrypted/tokenized `value`, `display_value` nếu được phép, `visibility`, `verified_at`, `consent_reference`. Unique/visibility phụ thuộc policy; API không trả giá trị ngoài quyền.
+Bảng `author_contact_methods` dùng để tách biệt thông tin liên hệ (số điện thoại, email, Zalo) khỏi profile công khai:
+- Các cột bao gồm `contact_method_id`, `author_profile_id`, `method_type`.
+- Giá trị liên hệ (`value`) cần được mã hóa (encrypted) hoặc dùng token theo chuẩn bảo mật.
+- Nếu được phép hiển thị, dùng cột `display_value`.
+- Các cột quản lý khác gồm `visibility`, `verified_at`, và `consent_reference` (chứng cứ đồng ý). Ràng buộc duy nhất hoặc mức độ hiển thị sẽ phụ thuộc vào chính sách (policy). API chỉ trả về giá trị nằm trong phạm vi quyền hạn.
 
 ### `verifications`
 
-`verification_id`, `author_profile_id` FK, `verification_type`, `status`, `evidence_reference`, `reviewed_by_user_id`, `reviewed_at`, `expires_at`, `reason`. Verification của listing/project/data source dùng lifecycle riêng của entity, không trộn vào dấu xác minh tác giả. Mọi thay đổi phải audit.
+Bảng này lưu trữ các mốc xác minh danh tính. Các cột bao gồm `verification_id`, `author_profile_id` (FK), `verification_type`, `status`, `evidence_reference`, `reviewed_by_user_id`, `reviewed_at`, `expires_at`, và `reason`.
+Quá trình xác minh của một tin đăng (listing), dự án (project), hoặc nguồn dữ liệu (data source) sử dụng quy trình quản lý riêng. Không trộn lẫn các mốc xác minh đó vào dấu xác minh dành cho tác giả. Mọi thay đổi trong bảng này đều phải được kiểm toán (audit).
 
 ### `user_consents`
 
-`consent_id`, `user_id`, `consent_type`, `policy_version`, `granted`, `captured_at`, `withdrawn_at`, `source`, `evidence_json`. Lead của khách vãng lai cần snapshot consent riêng trên request nếu chưa có `user_id`.
+Bảng này ghi nhận sự đồng ý của người dùng. Các cột bao gồm `consent_id`, `user_id`, `consent_type`, `policy_version`, `granted`, `captured_at`, `withdrawn_at`, `source`, và `evidence_json`.
+Đối với các khách vãng lai (khách chưa có tài khoản - chưa có `user_id`), khi họ để lại thông tin (lead), hệ thống cần chụp lại (snapshot) một bản ghi đồng ý riêng biệt gắn trực tiếp trên yêu cầu của họ.
 
 ## 5. Geography và nguồn dữ liệu
 
@@ -156,7 +162,7 @@ Một profile công khai thuộc đúng một user **hoặc** một organization
 | `districts` | `district_id`, `city_id`, `code`, `name`, `boundary` nullable; unique `(city_id, code)` |
 | `wards` | Chỉ thêm nếu nguồn/UI yêu cầu; không nằm trong MVP đã xác nhận |
 
-Tọa độ dùng PostGIS chỉ khi OQ-014 xác nhận radius/polygon; nếu chỉ marker, `latitude numeric`, `longitude numeric` đủ cho giai đoạn đầu.
+Chỉ sử dụng PostGIS cho dữ liệu tọa độ nếu OQ-014 xác nhận cần tìm kiếm theo bán kính hoặc đa giác (radius/polygon). Nếu chỉ dùng để đánh dấu điểm (marker) trên bản đồ, việc lưu trữ vĩ độ `latitude numeric` và kinh độ `longitude numeric` là đủ cho giai đoạn đầu.
 
 ### Provenance/ingestion
 
@@ -167,7 +173,7 @@ Tọa độ dùng PostGIS chỉ khi OQ-014 xác nhận radius/polygon; nếu ch�
 | `source_records` | External ID, checksum/version, first/last seen, canonical entity mapping, raw object key tùy retention |
 | `data_quality_issues` | Record/entity, rule code, severity, details, resolution status/actor |
 
-Không lưu payload thô có PII vô thời hạn; retention và object storage policy chờ OQ-028/OQ-045.
+Không lưu trữ vô thời hạn các gói dữ liệu thô (raw payload) có chứa PII (thông tin định danh cá nhân). Thời gian lưu trữ (retention) và chính sách quản lý object storage sẽ chờ quyết định từ OQ-028/OQ-045.
 
 ## 6. Catalog dự án và tồn kho
 
@@ -189,13 +195,13 @@ Không lưu payload thô có PII vô thời hạn; retention và object storage 
 | `source_id`, `observed_at`, `verification_status` | provenance |
 | `version` | integer |
 
-Không lưu `unit_count` như nguồn sự thật. Nếu cần hiển thị nhanh, dùng projection/materialized count có cơ chế cập nhật.
+Không lưu trữ tổng số lượng căn (`unit_count`) như một nguồn sự thật (source of truth). Nếu giao diện cần hiển thị nhanh, hãy dùng các phương pháp tính toán trung gian (như projection hoặc materialized view) kết hợp với cơ chế cập nhật đồng bộ.
 
 ### Hierarchy
 
-- `project_phases(phase_id, project_id, code, name, status, launch_at, handover_at, sort_order)`; unique `(project_id, code)`.
-- `buildings(building_id, phase_id, code, name, floor_count, status)`; unique `(phase_id, code)`.
-- Không suy ra hierarchy từ chuỗi `projectName/phase/building` trong mock.
+- `project_phases(phase_id, project_id, code, name, status, launch_at, handover_at, sort_order)`; sử dụng unique cho `(project_id, code)`.
+- `buildings(building_id, phase_id, code, name, floor_count, status)`; sử dụng unique cho `(phase_id, code)`.
+- Không tự động nội suy cấu trúc phân cấp (hierarchy) từ chuỗi văn bản gộp (ví dụ: `projectName/phase/building`) trong file mock. Cấu trúc cần được lưu riêng biệt và rõ ràng.
 
 ### `units`
 
@@ -215,23 +221,23 @@ Không lưu `unit_count` như nguồn sự thật. Nếu cần hiển thị nhan
 
 ### `unit_distributor_offers`
 
-- `offer_id` PK, `unit_id` FK, `distributor_organization_id` FK.
-- `source_id`, `external_id`, `status_code`, `status_observed_at`.
-- `list_price_amount_vnd`, `net_price_amount_vnd` nullable; fee/tax inclusions phải có field/policy rõ.
-- `promotion_text`/structured promotion tùy nguồn, `valid_from`, `valid_until`.
-- `priority` không được dùng để thay authority mà không có rule.
-- Unique `(source_id, external_id)` và index `(unit_id, status_code, status_observed_at desc)`.
+- Các cột: `offer_id` (PK), `unit_id` (FK), `distributor_organization_id` (FK).
+- Các thông tin từ nguồn: `source_id`, `external_id`, `status_code`, `status_observed_at`.
+- Thông tin về giá: `list_price_amount_vnd` (giá niêm yết), `net_price_amount_vnd` (giá net). Những cột này có thể rỗng (nullable). Hệ thống cần các chính sách rõ ràng để xác định các khoản thuế hoặc phí đi kèm (fee/tax inclusions).
+- Khuyến mãi: `promotion_text` hoặc structured promotion (khuyến mãi có cấu trúc) tùy thuộc vào nguồn, đi kèm với `valid_from` (từ ngày) và `valid_until` (đến ngày).
+- Mức độ ưu tiên (`priority`) không được sử dụng để qua mặt các cơ chế thẩm quyền (authority) khi chưa có luật nghiệp vụ (rule) xác định rõ ràng.
+- Ràng buộc duy nhất `(source_id, external_id)` và sử dụng chỉ mục (index) cho `(unit_id, status_code, status_observed_at desc)`.
 
 ### `unit_status_observations`
 
-Bảng append-only lưu lịch sử nhận trạng thái thay vì chỉ ghi đè snapshot:
+Đây là bảng dạng chỉ thêm mới (append-only) dùng để lưu lại lịch sử nhận trạng thái thay vì chỉ ghi đè dữ liệu mới nhất. Điều này giúp theo dõi và khắc phục các vấn đề xung đột.
 
-- `unit_status_observation_id`, `unit_id`, `offer_id` nullable, `source_id`, `sync_run_id` nullable.
-- `status_code`, `observed_at` từ nguồn, `received_at` của hệ thống, `source_version`/`payload_hash`.
-- `accepted_as_canonical` và `decision_reason` chỉ phản ánh kết quả authority/conflict rule đã được duyệt; không để worker tự suy đoán.
-- Unique theo source event/version hoặc checksum để ingest idempotent; index `(unit_id, observed_at desc)`.
+- Các cột: `unit_status_observation_id`, `unit_id`, `offer_id` (nullable), `source_id`, `sync_run_id` (nullable).
+- Chi tiết trạng thái: `status_code`, `observed_at` (thời điểm ghi nhận từ nguồn), `received_at` (thời điểm hệ thống tiếp nhận), và `source_version`/`payload_hash`.
+- Cột `accepted_as_canonical` và `decision_reason` chỉ dùng để lưu kết quả từ các quy tắc thẩm quyền (authority) hoặc quy tắc xử lý xung đột (conflict rule) đã được duyệt. Tuyệt đối không để worker tự ý suy đoán và điền vào các cột này.
+- Bảng dùng ràng buộc duy nhất (unique) dựa trên sự kiện và phiên bản nguồn (source event/version) hoặc mã băm (checksum) để đảm bảo việc nạp dữ liệu (ingest) mang tính lũy đẳng (idempotent - nạp nhiều lần vẫn cho ra một kết quả). Bảng cũng có chỉ mục `(unit_id, observed_at desc)`.
 
-`units.canonical_status/status_observed_at` là snapshot hiện hành được cập nhật theo rule OQ-009/OQ-011; observation là audit/history để giải thích freshness và xung đột.
+Trong bảng `units`, các cột `canonical_status` và `status_observed_at` lưu trữ ảnh chụp trạng thái hiện tại, được cập nhật theo quy tắc của OQ-009/OQ-011. Bảng observation này dùng làm lịch sử để kiểm toán (audit) và giải thích độ tươi (freshness) cũng như các xung đột dữ liệu.
 
 ### Chi tiết dự án
 
@@ -261,39 +267,39 @@ Bảng append-only lưu lịch sử nhận trạng thái thay vì chỉ ghi đè
 | Contact/ownership | `owner_organization_id`/`created_by_user_id` theo role đã duyệt; không public PII trực tiếp |
 | Trust | `verification_status`, `observed_at`, `version`, `deleted_at` |
 
-Constraints/index chính:
+Constraints và chỉ mục (index) chính:
 
-- Unique `(source_id, external_id)` khi có external record.
-- CHECK sale/rent và `price_period` theo contract được duyệt.
-- CHECK giá/diện tích dương khi có.
-- Index `(transaction_kind, city_id, district_id, status, published_at desc)`.
-- Index có chọn lọc cho giá, diện tích, phòng ngủ theo query plan thực tế.
-- GIN cho search vector title/description/project/address sau benchmark tiếng Việt.
-- Không lập quá nhiều composite index trước khi có query telemetry.
+- Cần ràng buộc duy nhất (unique constraint) cho `(source_id, external_id)` khi hệ thống xử lý bản ghi từ bên ngoài.
+- Dùng CHECK để ràng buộc phân loại mua bán (sale) hay cho thuê (rent), và `price_period` (chu kỳ thanh toán) phải tuân theo các hợp đồng đã được duyệt.
+- Dùng CHECK để đảm bảo giá và diện tích phải là số dương khi có dữ liệu.
+- Thiết lập index cho `(transaction_kind, city_id, district_id, status, published_at desc)`.
+- Chỉ thêm index có chọn lọc (selective index) cho giá, diện tích, và số phòng ngủ dựa trên biểu đồ thực thi truy vấn thực tế (query plan).
+- Sử dụng GIN cho công cụ tìm kiếm vector (search vector) trên các cột title, description, project, và address sau khi đã đánh giá hiệu năng (benchmark) cẩn thận với tiếng Việt.
+- Không lạm dụng việc tạo quá nhiều chỉ mục phức hợp (composite index) trước khi thu thập được các số liệu đo lường truy vấn (query telemetry) thực tế.
 
 ### `listing_media`
 
-`listing_media_id`, `listing_id`, `media_asset_id`, `media_role`, `sort_order`, `caption`; unique sort/order rule trong listing. Media lifecycle thuộc module Media.
+Các cột bao gồm `listing_media_id`, `listing_id`, `media_asset_id`, `media_role`, `sort_order`, `caption`. Cần đảm bảo quy tắc sắp xếp (sort/order rule) là duy nhất trong một listing. Vòng đời của tập tin (Media lifecycle) thuộc về module Media.
 
 ### `listing_feature_values` — tùy chọn
 
-Chỉ thêm nếu taxonomy tiện ích/thuộc tính cần filter linh hoạt. Không dùng EAV cho các field cốt lõi như giá, diện tích, phòng và vị trí.
+Chỉ thêm bảng này nếu hệ thống cần lọc dữ liệu linh hoạt theo các tiện ích hoặc thuộc tính thông qua hệ thống phân loại (taxonomy). Không sử dụng mô hình EAV (Entity-Attribute-Value) cho các trường cốt lõi như giá, diện tích, số phòng và vị trí.
 
 ## 8. Saved, interest và lead
 
 ### `saved_items`
 
-- `saved_item_id`, `user_id`.
-- `listing_id`, `project_id`, `unit_id`, `social_post_id` đều nullable.
-- CHECK đúng một trong bốn FK khác null.
-- Partial unique index cho từng cặp `(user_id, <resource_id>) WHERE <resource_id> IS NOT NULL`.
-- `collection_key` chỉ thêm nếu product xác nhận nhiều collection.
+- Các cột: `saved_item_id`, `user_id`.
+- Mục tiêu lưu trữ: `listing_id`, `project_id`, `unit_id`, `social_post_id` đều là khóa ngoại có thể rỗng (nullable).
+- Dùng ràng buộc CHECK để đảm bảo luôn có đúng một trong bốn khóa ngoại này khác null (người dùng phải lưu một thứ gì đó).
+- Tạo các chỉ mục duy nhất một phần (partial unique index) cho từng cặp `(user_id, <resource_id>) WHERE <resource_id> IS NOT NULL`.
+- Chỉ thêm `collection_key` nếu ứng dụng xác nhận cho phép tạo nhiều bộ sưu tập (collection) khác nhau.
 
-Phương án này giữ FK chặt và API có thể trả một saved feed thống nhất. Nếu resource type tăng nhanh, cân nhắc resource registry; chưa cần ở MVP.
+Phương án này giữ các khóa ngoại chặt chẽ. API có thể truy vấn và trả về một luồng tin lưu (saved feed) thống nhất. Nếu sau này có thêm nhiều loại tài nguyên mới, ta có thể cân nhắc một sổ đăng ký tài nguyên chung (resource registry). Tuy nhiên, hiện tại (MVP) thì chưa cần thiết.
 
 ### `interest_signals`
 
-Cấu trúc target tương tự saved nhưng có `signal_type`, `source_surface`, `captured_at`, `withdrawn_at`. Semantics chờ OQ-023; không tự hợp nhất với saved.
+Cấu trúc lưu trữ giống với `saved_items` nhưng có thêm các cột: `signal_type`, `source_surface`, `captured_at`, và `withdrawn_at`. Ngữ nghĩa chi tiết của các tín hiệu (semantics) sẽ chờ giải quyết tại OQ-023. Không tự động gộp chung (hợp nhất) tín hiệu quan tâm với các mục đã lưu (saved).
 
 ### `consultation_requests`
 
@@ -308,33 +314,33 @@ Cấu trúc target tương tự saved nhưng có `signal_type`, `source_surface`
 | `source_surface`, `status`, `assigned_organization_id`, `assigned_user_id` | Assignment rule chưa xác định |
 | `idempotency_key`, `version` | Unique theo actor/scope |
 
-`consultation_status_events` lưu from/to status, actor, reason và time nếu lifecycle nhiều bước được duyệt.
+Bảng `consultation_status_events` dùng để lưu lại quá trình chuyển đổi trạng thái (từ trạng thái cũ sang mới), người thực hiện (actor), lý do, và thời gian nếu quy trình nhiều bước (lifecycle) được thông qua.
 
 ## 9. Booking và hold
 
 ### `booking_requests`
 
-- `booking_request_id`, `unit_id`, `requester_user_id` nullable theo auth policy.
-- Snapshot PII: `customer_name`, `phone_e164`, `email_normalized` nullable cho đến OQ-022, `note`.
-- `source_offer_id` nullable, `source_surface`.
-- `status`, `idempotency_key`, `version`.
-- `consent_policy_version`, `consented_at`.
-- `submitted_at`, `cancelled_at`, `resolved_at`.
-- Unique idempotency theo actor + key; guest scope cần fingerprint/token an toàn, không dựa vào IP đơn thuần.
+- Các cột: `booking_request_id`, `unit_id`, và `requester_user_id` (nullable theo chính sách xác thực - auth policy).
+- Snapshot thông tin định danh cá nhân (PII): `customer_name`, `phone_e164`, `email_normalized` (có thể rỗng cho đến khi chốt OQ-022), và `note`.
+- Nguồn yêu cầu: `source_offer_id` (nullable), `source_surface`.
+- Trạng thái và điều khiển: `status`, `idempotency_key`, `version`.
+- Đồng ý của người dùng: `consent_policy_version`, `consented_at`.
+- Thời gian: `submitted_at`, `cancelled_at`, `resolved_at`.
+- Tính duy nhất lũy đẳng (Idempotency) dựa trên actor (người thực hiện) kết hợp với key. Đối với người dùng chưa đăng nhập (guest), hệ thống cần cơ chế vân tay (fingerprint) hoặc token an toàn. Không nên chỉ dựa vào IP vì IP không đại diện cho một người dùng cụ thể.
 
 ### `unit_holds`
 
-- `unit_hold_id`, `unit_id`, `booking_request_id` unique nullable theo flow.
-- `status`, `starts_at`, `expires_at`, `released_at`, `release_reason`.
-- `created_by_user_id`/system actor, `version`.
-- Một partial unique index/exclusion constraint bảo đảm chỉ một hold active cho mỗi `unit_id`, theo representation trạng thái đã chọn.
-- Job expiry phải idempotent và kiểm tra version/time trong transaction.
+- Các cột: `unit_hold_id`, `unit_id`, `booking_request_id` (unique nullable theo quy trình luồng xử lý).
+- Trạng thái và thời gian: `status`, `starts_at`, `expires_at`, `released_at`, `release_reason`.
+- Quản lý: `created_by_user_id` (hoặc định danh hệ thống - system actor), `version`.
+- Database tự đảm bảo: mỗi căn hộ chỉ có tối đa 1 giữ chỗ đang hiệu lực, bằng ràng buộc (partial unique index/exclusion constraint) tại cấp database.
+- Tác vụ dọn dẹp giữ chỗ hết hạn (job expiry) phải an toàn (idempotent). Nó cần kiểm tra phiên bản (version) và thời gian thực hiện trong cùng một giao dịch (transaction).
 
 ### `booking_status_events`
 
-`booking_status_event_id`, `booking_request_id`, `from_status`, `to_status`, `actor_type`, `actor_id`, `reason_code`, `metadata_json`, `created_at`.
+Cột bao gồm `booking_status_event_id`, `booking_request_id`, `from_status`, `to_status`, `actor_type`, `actor_id`, `reason_code`, `metadata_json`, `created_at`.
 
-State machine đề xuất để thảo luận, **chưa được phê duyệt**:
+Mô hình trạng thái (State machine) đề xuất để thảo luận, **chưa được phê duyệt**:
 
 ```mermaid
 stateDiagram-v2
@@ -350,13 +356,13 @@ stateDiagram-v2
     HOLD_CONFIRMED --> CANCELLED
 ```
 
-Không tạo bảng payment/KYC/contract trước khi OQ-019/OQ-020 được duyệt.
+Không thiết kế sớm các bảng liên quan đến thanh toán (payment), xác minh danh tính (KYC), hay hợp đồng (contract) trước khi OQ-019/OQ-020 được ban quản lý phê duyệt.
 
 ## 10. Conversation và AI
 
 ### `conversations`
 
-`conversation_id`, `owner_user_id`, `title`, `status`, `last_message_at`, `message_count` projection, `version`, `deleted_at`. Guest conversation chỉ được thêm khi OQ-003/OQ-034 có chính sách session/retention.
+Cột bao gồm `conversation_id`, `owner_user_id`, `title`, `status`, `last_message_at`, `message_count` (giá trị chiếu - projection), `version`, `deleted_at`. Cuộc trò chuyện của khách vãng lai (guest) chỉ được lưu khi có chính sách rõ ràng về phiên (session) và thời gian lưu trữ ở OQ-003/OQ-034.
 
 ### `messages`
 
@@ -373,27 +379,27 @@ Không tạo bảng payment/KYC/contract trước khi OQ-019/OQ-020 được duy
 
 ### `conversation_contexts`
 
-Liên kết message/conversation tới listing/project/unit/post bằng FK chặt và `context_role`. Có exactly-one target check tương tự saved; quyền được kiểm tra khi tạo và khi retrieval.
+Bảng này tạo liên kết từ tin nhắn (message) hoặc cuộc trò chuyện (conversation) đến các tài nguyên như tin đăng (listing), dự án (project), căn hộ (unit) hoặc bài viết (post). Hệ thống dùng khóa ngoại chặt (FK) và phân loại qua cột `context_role`. Cơ sở dữ liệu sẽ kiểm tra để đảm bảo chỉ tham chiếu đến đúng một đối tượng mục tiêu (exactly-one target check), tương tự như phần saved. Quyền truy cập phải được xác thực cả lúc tạo và lúc đọc.
 
 ### `ai_runs`
 
-- `ai_run_id`, `message_id`, `use_case`, `status`.
-- `model_provider`, `model_name`, `model_version`, `prompt_template_version`, `policy_version`.
-- `input_token_count`, `output_token_count`, `estimated_cost`, `time_to_first_token_ms`, `total_latency_ms`.
-- `safety_result`, `grounding_result`, `started_at`, `completed_at`, `error_code`.
-- Không lưu chain-of-thought. Prompt/output thô chỉ lưu nếu policy cho phép, có redaction, encryption, retention và quyền riêng.
+- Định danh và trạng thái: `ai_run_id`, `message_id`, `use_case`, `status`.
+- Mô hình: `model_provider`, `model_name`, `model_version`, `prompt_template_version`, `policy_version`.
+- Đo lường: `input_token_count`, `output_token_count`, `estimated_cost`, `time_to_first_token_ms`, `total_latency_ms`.
+- Kết quả: `safety_result`, `grounding_result`, `started_at`, `completed_at`, `error_code`.
+- Tuyệt đối không lưu lại quá trình suy luận (chain-of-thought). Dữ liệu văn bản thô từ input/output (Prompt/output thô) chỉ được lưu nếu chính sách cho phép. Dữ liệu này phải được bôi đen các thông tin nhạy cảm (redaction), mã hóa (encryption), có thời hạn lưu trữ (retention) và phân quyền riêng biệt.
 
 ### `ai_tool_calls`
 
-`tool_call_id`, `ai_run_id`, `tool_name`, `tool_version`, sanitized input hash/metadata, status, latency, result record IDs/provenance, error code. Không log bearer token hoặc PII thô.
+Cột bao gồm `tool_call_id`, `ai_run_id`, `tool_name`, `tool_version`, giá trị băm của input đã được lọc mầm mống độc hại (sanitized input hash) hoặc metadata, status, latency, ID kết quả hoặc nguồn gốc (provenance), error code. Không lưu bearer token (token bảo mật) hoặc dữ liệu PII (thông tin định danh cá nhân) thô vào log.
 
 ### `ai_citations`
 
-`citation_id`, `ai_run_id`, `ordinal`, `claim_reference`/character offsets nếu UI hỗ trợ, `source_type`, FK target phù hợp hoặc `source_record_id`, `public_url` nullable, `source_title`, `observed_at`, `trust_tier`, `access_scope`. Citation snapshot cần đủ để audit nhưng không vượt quyền/bản quyền.
+Cột bao gồm `citation_id`, `ai_run_id`, `ordinal`, `claim_reference` hoặc character offsets nếu UI hỗ trợ, `source_type`, mục tiêu khóa ngoại hoặc `source_record_id`, `public_url` (nullable), `source_title`, `observed_at`, `trust_tier`, `access_scope`. Ảnh chụp dữ liệu nguồn (citation snapshot) phải đủ để kiểm tra lại (audit) nhưng không được vượt quyền xem hoặc vi phạm bản quyền.
 
 ### AI evaluation tables
 
-`ai_feedback` và `ai_eval_results` chỉ thêm khi eval process được duyệt. Fixture benchmark không chứa PII; match/evaluation output lưu `algorithm_version`, feature snapshot/hash và explanation reference.
+Các bảng `ai_feedback` và `ai_eval_results` chỉ được thêm vào sau khi quy trình đánh giá chất lượng AI (eval process) được thông qua. Dữ liệu thử nghiệm (Fixture benchmark) không được chứa PII (thông tin định danh cá nhân). Các kết quả (match/evaluation output) cần lưu lại phiên bản thuật toán (`algorithm_version`), bản chụp hoặc mã băm của tính năng (feature snapshot/hash) và đường dẫn giải thích (explanation reference).
 
 ## 11. Social và moderation
 
@@ -421,20 +427,21 @@ Liên kết message/conversation tới listing/project/unit/post bằng FK chặ
 
 ### `comments`
 
-`comment_id`, `post_id`, `author_profile_id`, `parent_comment_id` nullable, `body`, `status`, `published_at`, `edited_at`, `version`, `deleted_at`. `parent_comment_id` chỉ bật cho threading thật sau OQ-039; nếu chỉ mention phẳng, để null và lưu mention riêng.
+Cột bao gồm `comment_id`, `post_id`, `author_profile_id`, `parent_comment_id` (nullable), `body`, `status`, `published_at`, `edited_at`, `version`, `deleted_at`.
+Cột `parent_comment_id` chỉ được kích hoạt nếu chức năng trả lời bình luận phân tầng (threading thật) được duyệt sau OQ-039. Nếu hệ thống chỉ hỗ trợ nhắc tên kiểu danh sách phẳng (mention phẳng), hãy để cột này null và lưu thông tin nhắc tên (mention) vào một bảng riêng.
 
 ### Tương tác
 
-- `reactions(reaction_id, actor_profile_id, target_post_id/target_comment_id, reaction_type, created_at)` với exactly-one target và unique actor/target/type.
-- `follows(follower_profile_id, followed_profile_id, status, created_at)`; CHECK không tự follow, unique pair.
-- `shares(share_id, actor_user_id nullable, post_id, channel, canonical_url, created_at)` chỉ ghi sự kiện server theo định nghĩa OQ-041.
-- Count là projection; source of truth là interaction rows hoặc aggregate ledger phù hợp tải.
+- Bảng `reactions(reaction_id, actor_profile_id, target_post_id/target_comment_id, reaction_type, created_at)` phải ràng buộc chính xác một mục tiêu (exactly-one target) và đảm bảo tính duy nhất (unique) cho cụm actor/target/type.
+- Bảng `follows(follower_profile_id, followed_profile_id, status, created_at)`. Cần thêm ràng buộc (CHECK) để người dùng không tự follow chính mình, và cặp follower/followed phải là duy nhất.
+- Bảng `shares(share_id, actor_user_id nullable, post_id, channel, canonical_url, created_at)` chỉ dùng để ghi lại hành vi chia sẻ từ phía server theo định nghĩa tại OQ-041.
+- Các cột hiển thị số lượt tương tác (Count) chỉ là giá trị chiếu (projection). Nguồn sự thật (source of truth) vẫn là các hàng chi tiết trong bảng tương tác hoặc bảng tổng hợp (aggregate ledger) được điều chỉnh phù hợp với khả năng chịu tải.
 
 ### Moderation
 
-- `moderation_decisions(decision_id, social_post_id nullable, comment_id nullable, media_asset_id nullable, policy_version, decision, reason_codes, model_run_id nullable, reviewer_user_id nullable, decided_at, supersedes_id)` với CHECK đúng một target. Nếu scope moderation mở rộng, thêm FK cụ thể bằng migration thay vì chấp nhận ID không ràng buộc.
-- `content_reports`, `user_blocks`, `moderation_appeals` chỉ thêm nếu OQ-037 xác nhận phạm vi.
-- Không hard-delete evidence đang cần appeal/audit; retention phải tuân chính sách.
+- Bảng `moderation_decisions` quản lý quyết định kiểm duyệt. Các cột gồm `decision_id`, `social_post_id` (nullable), `comment_id` (nullable), `media_asset_id` (nullable), `policy_version`, `decision`, `reason_codes`, `model_run_id` (nullable), `reviewer_user_id` (nullable), `decided_at`, `supersedes_id`. Bảng cần dùng ràng buộc (CHECK) để đảm bảo quyết định chỉ áp dụng cho đúng một mục tiêu (exactly-one target). Nếu phạm vi kiểm duyệt mở rộng thêm nhiều loại dữ liệu mới, hãy thêm các khóa ngoại (FK) cụ thể thông qua migration thay vì dùng ID dùng chung không ràng buộc.
+- Các bảng `content_reports` (báo cáo nội dung xấu), `user_blocks` (chặn người dùng), và `moderation_appeals` (khiếu nại) chỉ được tạo nếu OQ-037 xác nhận phạm vi tính năng này.
+- Không xóa cứng (hard-delete) các dữ kiện hoặc bằng chứng đang nằm trong quy trình khiếu nại hoặc kiểm toán. Quá trình lưu trữ (retention) phải tuân thủ nghiêm ngặt chính sách.
 
 ## 12. Market content và notification
 
@@ -447,87 +454,87 @@ Liên kết message/conversation tới listing/project/unit/post bằng FK chặ
 | `articles` | Tin/news/risk content metadata, canonical URL, publisher, dates, verification/license |
 | `risk_knowledge` | Nội dung cảnh báo có version, source, reviewer/status; không coi AI output là dữ kiện chuẩn |
 
-Một metric cùng khái niệm phải có taxonomy/unit duy nhất để tránh tình trạng số mock mâu thuẫn.
+Khi đo lường một chỉ số (metric) cùng khái niệm, phải có một phân loại chuẩn (taxonomy) và đơn vị (unit) duy nhất. Điều này giúp tránh tình trạng các dữ liệu mock mâu thuẫn về số liệu.
 
 ### Notifications
 
-- `notifications(notification_id, recipient_user_id, type, subject_type/id, title, body/template_data, status, read_at, created_at)`.
-- `notification_preferences` chỉ thêm khi kênh/sự kiện được duyệt.
-- `notification_delivery_attempts` lưu channel/provider/message ID/status/error code/attempt time; không lưu payload PII thô trong log.
+- Bảng `notifications`: gồm `notification_id`, `recipient_user_id`, `type`, `subject_type/id`, `title`, `body/template_data`, `status`, `read_at`, `created_at`.
+- Bảng `notification_preferences`: chỉ thêm vào khi các kênh thông báo hoặc sự kiện cụ thể được phê duyệt.
+- Bảng `notification_delivery_attempts`: lưu trữ kênh gửi, nhà cung cấp, message ID, trạng thái, mã lỗi, và thời gian thực hiện. Tuyệt đối không lưu trữ dữ liệu PII (thông tin định danh cá nhân) thô trong log của bảng này.
 
 ## 13. Jobs, outbox và audit
 
 ### `jobs`
 
-`job_id`, `job_type`, `payload_json`, `status`, `priority`, `run_after`, `attempt_count`, `max_attempts`, `locked_by`, `lock_expires_at`, `last_error_code`, `dedupe_key`, timestamps. Index claim job trên `(status, run_after, priority)`; payload có version và không chứa secret.
+Cột bao gồm `job_id`, `job_type`, `payload_json`, `status`, `priority`, `run_after`, `attempt_count`, `max_attempts`, `locked_by`, `lock_expires_at`, `last_error_code`, `dedupe_key`, và timestamps. Đánh chỉ mục (Index) hỗ trợ truy vấn các công việc cần chạy dựa trên cụm cột `(status, run_after, priority)`. Payload của tác vụ phải có đánh dấu phiên bản (version) và tuyệt đối không được chứa bí mật (secret).
 
 ### `outbox_events`
 
-`event_id`, `event_type`, `aggregate_type`, `aggregate_id`, `aggregate_version`, `payload_json`, `occurred_at`, `published_at`, `attempt_count`. Tạo trong cùng transaction với mutation nghiệp vụ. Consumer dùng `event_id` để idempotent.
+Cột bao gồm `event_id`, `event_type`, `aggregate_type`, `aggregate_id`, `aggregate_version`, `payload_json`, `occurred_at`, `published_at`, `attempt_count`. Các sự kiện trong bảng này phải được tạo ra trong cùng một giao dịch (transaction) với các thay đổi nghiệp vụ (mutation). Đơn vị tiêu thụ sự kiện (Consumer) sẽ sử dụng `event_id` để đảm bảo thực hiện thao tác một cách lũy đẳng (idempotent).
 
 ### `audit_logs`
 
-`audit_id`, `occurred_at`, actor type/ID, organization context nullable, action, target type/ID, request/trace ID, before/after redacted metadata, reason, source IP hash/metadata theo policy. Chỉ append; quyền đọc và retention riêng.
+Cột bao gồm `audit_id`, `occurred_at`, loại actor và ID, ID ngữ cảnh của tổ chức (organization context - nullable), action (hành động), loại mục tiêu và ID (target type/ID), ID truy vết của yêu cầu (request/trace ID), siêu dữ liệu trước và sau khi thay đổi đã được che đi thông tin nhạy cảm (before/after redacted metadata), reason (lý do), giá trị băm hoặc siêu dữ liệu của IP nguồn (source IP hash/metadata) theo chính sách. Bảng này chỉ hỗ trợ tác vụ ghi thêm (append-only); cần có quyền đọc (read access) và thời gian lưu trữ (retention) riêng biệt.
 
 ## 14. Transaction và invariant quan trọng
 
-### Tạo hold
+### Tạo hold (Giữ chỗ)
 
-1. Bắt đầu transaction.
-2. Lock row `units` hoặc advisory/locking strategy được benchmark.
-3. Kiểm tra canonical status, freshness và active hold.
-4. Kiểm tra/replay `idempotency_key`.
-5. Tạo booking/hold/status event/outbox.
-6. Commit; sau commit worker phát notification.
+1. Bắt đầu một giao dịch (transaction).
+2. Khóa (Lock) một hàng tương ứng trong bảng `units` hoặc áp dụng chiến lược khóa tư vấn (advisory/locking strategy) đã được đo đạc.
+3. Kiểm tra các yếu tố: trạng thái chuẩn (canonical status), độ mới của dữ liệu (freshness), và thông tin giữ chỗ hiện đang hiệu lực (active hold).
+4. Kiểm tra hoặc xử lý lại mã lũy đẳng (`idempotency_key`).
+5. Tiến hành tạo ra chuỗi sự kiện booking, hold, status event và outbox.
+6. Xác nhận giao dịch (Commit). Sau khi commit, worker sẽ gửi thông báo.
 
-Partial unique constraint là lớp bảo vệ cuối; application check cung cấp lỗi nghiệp vụ dễ hiểu.
+Ràng buộc duy nhất một phần (Partial unique constraint) tại cấp cơ sở dữ liệu là lớp bảo vệ cuối cùng. Phần kiểm tra trên application sẽ giúp trả về lỗi nghiệp vụ rõ ràng, dễ hiểu cho người dùng.
 
-### Mutation idempotent
+### Mutation idempotent (Sửa đổi dữ liệu an toàn)
 
-- Saved/reaction/follow dùng unique constraint + upsert/delete idempotent.
-- Lead/booking/post/comment dùng bảng/idempotency record theo actor, route, key và request hash; cùng key khác payload trả conflict.
-- Webhook dùng `(source_id, external_event_id)` và replay window.
+- Lưu tin/thích/theo dõi (Saved/reaction/follow): dùng ràng buộc duy nhất (unique constraint) kết hợp với các thao tác upsert hoặc delete hỗ trợ idempotent (thực hiện nhiều lần cho kết quả như một).
+- Lead/booking/post/comment: dùng các bảng kiểm soát hoặc bản ghi idempotency riêng lẻ. Việc kiểm tra này sẽ tính trên người thực hiện (actor), route (tuyến gọi), key (mã) và giá trị băm của yêu cầu (request hash). Nếu cùng một key mà nội dung bị đổi, hệ thống trả về lỗi xung đột (conflict).
+- Webhook: kết hợp `(source_id, external_event_id)` với khoảng thời gian chấp nhận thử lại (replay window).
 
-### Optimistic concurrency
+### Optimistic concurrency (Cơ chế khóa lạc quan)
 
-Update resource mutable nhận `If-Match`/`version`; SQL update có `WHERE version = expected`, tăng version khi thành công; không khớp trả 409/412 theo API convention được duyệt.
+Khi một tài nguyên thay đổi, hệ thống sẽ sử dụng header `If-Match` hoặc trường `version` trong payload để kiểm tra. Câu lệnh SQL update phải có điều kiện `WHERE version = expected` (phiên bản đang có khớp với phiên bản dự kiến). Nếu thay đổi thành công, hệ thống tăng `version` lên 1. Nếu không khớp, API sẽ trả về lỗi 409 (Conflict) hoặc 412 (Precondition Failed) theo quy ước chuẩn được ban quản lý thông qua.
 
 ## 15. Index, partition và scale
 
-- Thiết kế index từ query contract và `EXPLAIN ANALYZE`, không tạo index cho mọi cột.
-- Các bảng lớn tiềm năng: messages, reactions, comments, audit_logs, jobs, observations. Chỉ partition khi số liệu/maintenance chứng minh cần.
-- BRIN phù hợp log/observation append-only theo thời gian; B-tree/GIN cho truy vấn tương tác.
-- Read replica chỉ dùng cho truy vấn chấp nhận lag; không dùng kiểm tra hold/booking.
-- Analytics nặng chuyển sang replica/warehouse sau khi scope và tải được xác nhận.
+- Việc thiết kế chỉ mục (index) phải dựa trên cam kết thiết kế truy vấn (query contract) kết hợp với kết quả từ `EXPLAIN ANALYZE`. Không tạo index tùy tiện cho tất cả các cột.
+- Những bảng có nguy cơ bùng nổ dữ liệu: messages, reactions, comments, audit_logs, jobs, observations. Chỉ áp dụng chia tách phân vùng (partition) khi dữ liệu hoạt động và chi phí bảo trì chứng minh được sự cần thiết.
+- Chỉ mục dạng BRIN (Block Range Index) rất phù hợp cho các dữ liệu như log hay observation, vốn là dạng chỉ ghi thêm theo thời gian. Trong khi đó, B-tree và GIN lại phù hợp cho truy vấn trực tác cường độ cao.
+- Bản sao chỉ đọc (Read replica) chỉ áp dụng cho những truy vấn có thể chấp nhận độ trễ (lag). Tuyệt đối không dùng bản sao này để kiểm tra tính khả dụng khi tạo giữ chỗ (hold) hoặc booking.
+- Các yêu cầu phân tích dữ liệu nặng (Analytics) phải chuyển sang replica hoặc kho dữ liệu (warehouse) sau khi phạm vi và tải thực tế được ghi nhận.
 
 ## 16. Retention, deletion và backup
 
-Chưa có thời hạn được phê duyệt. Trước production cần data-classification matrix cho:
+Hiện tại hệ thống chưa có thời hạn lưu trữ cụ thể được phê duyệt. Trước khi ra mắt (production), ta cần có một ma trận phân loại rủi ro dữ liệu cho các nhóm:
 
-- profile/auth identifiers;
-- phone/email/lead/booking và consent evidence;
-- conversations/prompts/AI runs;
-- social content/moderation evidence;
-- partner raw payload và source documents;
-- audit/security logs và backups.
+- Profile (hồ sơ) và các số định danh auth;
+- Phone, email, lead, booking và bằng chứng đồng ý (consent evidence);
+- Conversations, prompts (nội dung đưa vào mô hình), kết quả chạy AI;
+- Nội dung social và bằng chứng kiểm duyệt;
+- Payload thô (raw payload) từ đối tác và các tài liệu nguồn gốc;
+- Nhật ký bảo mật (audit/security logs) và các bản sao lưu (backups).
 
-Deletion phải phân biệt: user-visible soft delete, legal retention, anonymization và physical purge kể cả search/vector/cache/backup theo khả năng. RPO/RTO, PITR window và restore drill chờ OQ-045.
+Việc xóa dữ liệu phải phân biệt rõ ràng các mức độ: người dùng xóa tạm thời (user-visible soft delete), lưu trữ theo luật pháp (legal retention), ẩn danh hóa (anonymization), và xóa hoàn toàn vật lý (physical purge). Xóa hoàn toàn vật lý phải tác động tới cả các vùng lưu trữ search, vector, cache và backup theo khả năng cho phép. Kế hoạch về RPO/RTO (Mục tiêu khôi phục/Thời gian khôi phục), cửa sổ khôi phục PITR (Point-in-Time Recovery) và diễn tập khôi phục (restore drill) sẽ chờ quyết định từ OQ-045.
 
 ## 17. Data-quality và migration từ mock
 
-Không import trực tiếp dữ liệu mock vào production trước khi xử lý:
+Tuyệt đối không đẩy trực tiếp dữ liệu mock (dữ liệu thử nghiệm) vào môi trường production trước khi xử lý triệt để:
 
-- `priceValueNumber` đang dùng thang khác nhau giữa sale/rent; chuyển sang VND integer từ field có đơn vị rõ.
-- Timestamp đang trộn ISO và chuỗi hiển thị; parse về UTC có source timezone hoặc loại record không xác định.
-- Listing chỉ chứa `projectName`; cần mapping canonical có confidence và review.
-- Unit lặp tên project/phase/building/distributor; tách hierarchy và organization.
-- Có hai bộ project mock và hai message model; chọn canonical contract.
-- Category social trùng số ít/số nhiều; chuẩn hóa taxonomy.
-- Một số social reference/ID và metric giá không khớp; quarantine thay vì tự suy đoán.
-- Badge saved hiện đếm khác modal; count phải query cùng source.
+- Biến `priceValueNumber` đang được dùng với các đơn vị khác nhau giữa tính năng mua bán (sale) và cho thuê (rent). Hãy chuyển sang lưu bằng kiểu số nguyên VND tại một cột có ghi rõ đơn vị.
+- Timestamp đang bị trộn lẫn giữa định dạng chuẩn ISO và chuỗi hiển thị. Phải parse lại về chuẩn múi giờ UTC, kèm theo múi giờ nguồn hoặc bỏ trống nếu không xác định được.
+- Listing hiện chỉ chứa `projectName`. Cần chuẩn bị phương án tham chiếu chính thức (canonical mapping) với độ chính xác và xác nhận cụ thể.
+- Unit đang bị lặp tên dự án, giai đoạn, tòa nhà và nhà phân phối (project/phase/building/distributor). Phải tách bạch các thông tin này ra cấu trúc phân cấp và tổ chức.
+- Hiện có hai bộ project mock và hai message model khác nhau. Cần thống nhất chọn ra một hợp đồng duy nhất (canonical contract).
+- Chuyên mục mạng xã hội (Category social) trùng lặp nhiều khái niệm số ít/số nhiều. Phải chuẩn hóa lại taxonomy này.
+- Một số tham chiếu social/ID và chỉ số giá cả không khớp nhau. Hãy cách ly chúng (quarantine) thay vì để hệ thống tự suy đoán và vá lỗi mù quáng.
+- Số đếm biểu tượng lưu tin (Badge saved) hiển thị khác với bảng tương tác (modal). Việc thống kê (count) phải được truy vấn từ cùng một nguồn chung.
 
-Mỗi rule migration có code, severity, result và report; record không map được được giữ ở staging/quarantine để product quyết định.
+Mỗi quy tắc di chuyển (migration rule) phải có định nghĩa rõ ràng, mức độ nghiêm trọng (severity), kết quả (result), và báo cáo (report). Các bản ghi không thể ánh xạ được phải giữ lại ở môi trường trung gian (staging/quarantine) chờ quyết định từ đội ngũ sản phẩm (product).
 
 ## 18. Các quyết định còn chặn schema vật lý
 
-Trước migration đầu tiên cần trả lời: OQ-002..004, OQ-008..013, OQ-019..023, OQ-028, OQ-034, OQ-036..040 và OQ-043..045. Khi trả lời, cập nhật schema, state machine, nullability, tenant key, retention, index và ADR trước khi tạo migration.
+Trước khi tạo tập lệnh migration đầu tiên, hệ thống cần được làm rõ và trả lời: OQ-002..004, OQ-008..013, OQ-019..023, OQ-028, OQ-034, OQ-036..040 và OQ-043..045. Khi có câu trả lời, hãy cập nhật toàn bộ schema, sơ đồ trạng thái (state machine), tính rỗng (nullability), khóa phân loại dữ liệu (tenant key), chính sách lưu trữ (retention), các chỉ mục (index) và tài liệu quyết định kiến trúc (ADR) trước khi sinh code cho migration.

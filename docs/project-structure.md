@@ -1,12 +1,14 @@
 # Cấu trúc dự án đề xuất
 
 ## 1. Trạng thái
+*Tóm tắt: Trạng thái hiện tại của tài liệu cấu trúc dự án.*
 
 - Trạng thái: **Proposed — chờ review**.
-- Đây là định hướng thư mục cho giai đoạn triển khai; **chưa tạo các thư mục/code này**.
-- Không tìm thấy `AGENTS.md` trong repository tại thời điểm khảo sát. Nếu file đó được thêm sau này, quy ước trong `AGENTS.md` có ưu tiên và tài liệu này phải được cập nhật.
+- Đây là định hướng thư mục cho giai đoạn triển khai. Các thư mục và code này hiện **chưa được tạo**.
+- File `AGENTS.md` không có mặt trong repository tại thời điểm khảo sát. Nếu file đó được thêm sau này, quy ước trong `AGENTS.md` sẽ được ưu tiên. Khi đó tài liệu này phải được cập nhật lại.
 
 ## 2. Hiện trạng repository
+*Tóm tắt: Phân tích cấu trúc thư mục hiện tại và những điểm cần cải thiện.*
 
 ```text
 src/
@@ -81,15 +83,16 @@ src/
 
 Đánh giá:
 
-- Cấu trúc phù hợp để làm mock UI, nhưng `useAppState.tsx` (~53KB) đang chứa nhiều domain state/action và logic giả lập.
-- `src/types.ts` trộn type từ catalog, chat, market và social. `SocialFeedCategory` chứa các giá trị thừa không dùng trong UI (`FOR_YOU`, `PROJECT`, `PRICE`, `PLANNING`, `INFRASTRUCTURE`, `INVESTMENT`, `VIDEO`).
-- `MarketSearch.tsx` không còn được import; `MarketPage.tsx` dùng `MarketAISearch.tsx`. File cũ cần được xóa hoặc đánh dấu deprecated.
-- Dữ liệu mock và business behavior chạy cùng frontend, chưa có boundary/API contract.
-- Chưa có router, test structure, migration, backend, OpenAPI hoặc infrastructure code.
-- `market/projects/` chứa 8 component lớn (tổng ~132KB) cho luồng dự án sơ cấp, tồn kho và booking.
-- Không nên thực hiện một lần "big-bang rewrite"; cần giữ UI chạy được và tách theo lát dọc.
+- Cấu trúc hiện tại phù hợp để làm mock UI (giao diện giả lập). Tuy nhiên, file `useAppState.tsx` (~53KB) đang chứa quá nhiều domain state/action và logic giả lập.
+- File `src/types.ts` trộn lẫn type (kiểu dữ liệu) từ nhiều phần: catalog, chat, market và social. Ví dụ, `SocialFeedCategory` chứa các giá trị thừa. Các giá trị này không được dùng trong UI (`FOR_YOU`, `PROJECT`, `PRICE`, `PLANNING`, `INFRASTRUCTURE`, `INVESTMENT`, `VIDEO`).
+- File `MarketSearch.tsx` không còn được import. File `MarketPage.tsx` hiện đang dùng `MarketAISearch.tsx`. File cũ cần được xóa đi hoặc đánh dấu deprecated (không khuyên dùng).
+- Dữ liệu mock và business behavior (logic nghiệp vụ) đang chạy cùng frontend. Hệ thống chưa có boundary (ranh giới) hoặc API contract (hợp đồng giao tiếp API).
+- Dự án chưa có router, cấu trúc test, migration (kịch bản chuyển đổi database), backend, OpenAPI, hoặc mã nguồn infrastructure (hạ tầng).
+- Thư mục `market/projects/` chứa 8 component lớn. Tổng dung lượng khoảng 132KB. Các file này phục vụ luồng dự án sơ cấp, tồn kho và booking (đặt chỗ).
+- Không nên thực hiện "big-bang rewrite" (đập đi xây lại toàn bộ một lần). Cần giữ cho UI chạy được. Quá trình chia tách nên thực hiện theo lát dọc (vertical slice).
 
 ## 3. Cấu trúc đích ở mức repository
+*Tóm tắt: Định hướng tổ chức thư mục tổng thể cho cả frontend, backend và các công cụ hỗ trợ.*
 
 ```text
 .
@@ -164,9 +167,10 @@ src/
 └── README.md
 ```
 
-Backend dùng Python FastAPI với Pydantic (validation/serialization), SQLAlchemy (ORM/query), Alembic (migration). Test runner và các chi tiết khác được chọn khi implementation.
+Backend sẽ dùng Python FastAPI. Nó sử dụng Pydantic cho validation/serialization (kiểm tra và chuyển đổi dữ liệu). Cùng với đó là SQLAlchemy cho ORM/query (tương tác cơ sở dữ liệu), và Alembic cho migration (chuyển đổi database). Test runner và các chi tiết khác sẽ được chọn trong giai đoạn implementation (triển khai thực tế).
 
 ## 4. Cấu trúc chuẩn bên trong một backend module
+*Tóm tắt: Cấu trúc thư mục tiêu chuẩn cho một module nghiệp vụ trong backend.*
 
 ```text
 server/app/modules/bookings/
@@ -188,9 +192,10 @@ server/app/modules/bookings/
 └── README.md                         # boundary, owner, invariants, events
 ```
 
-Không phải module nào cũng cần đủ tất cả folder ngay từ đầu. Chỉ tạo folder khi có code thật; không tạo lớp/abstraction trống để “đúng mẫu”.
+Không phải module nào cũng cần đủ tất cả các folder ngay từ đầu. Chỉ tạo folder khi thực sự có code bên trong. Không tạo các lớp hoặc abstraction (trừu tượng hóa) trống chỉ để “đúng mẫu”.
 
 ## 5. Quy tắc phụ thuộc
+*Tóm tắt: Các quy tắc về sự phụ thuộc giữa các thành phần để đảm bảo kiến trúc sạch.*
 
 ```mermaid
 flowchart LR
@@ -202,15 +207,16 @@ flowchart LR
     domain -. "không import framework, DB, HTTP" .-> domain
 ```
 
-1. `domain/` không import FastAPI, SQLAlchemy, vendor SDK, environment hoặc module khác.
-2. `application/` điều phối use case qua port; không chứa SQL/HTTP response object.
-3. `transport/` parse/validate request, gọi use case và map error sang API contract.
-4. `adapters/` hiện thực port; dependency được nối ở composition root.
-5. Module khác chỉ import từ `module/__init__.py` hoặc event/schema công khai, không import file nội bộ.
-6. Không dùng database table của module khác để cập nhật trực tiếp. Read projection/join chỉ được phép theo contract đã thống nhất; invariant vẫn thuộc owner module.
-7. `shared/` chỉ chứa primitive kỹ thuật ổn định như Result/Error, clock, ID, transaction context; không trở thành “misc/utils”.
+1. Thư mục `domain/` không được import FastAPI, SQLAlchemy, vendor SDK (thư viện của bên thứ ba), biến môi trường hoặc module khác.
+2. Thư mục `application/` làm nhiệm vụ điều phối use case (ca sử dụng) thông qua port (giao diện trừu tượng để tách logic khỏi chi tiết kỹ thuật). Nơi này không chứa SQL hoặc HTTP response object.
+3. Thư mục `transport/` chịu trách nhiệm parse/validate request. Nó gọi use case và map error sang API contract.
+4. Thư mục `adapters/` chứa các adapter (hiện thực cụ thể của port). Các dependency (phụ thuộc) sẽ được nối ở composition root (nơi kết nối các module lại).
+5. Các module chỉ được dùng những gì module khác export qua `__init__.py` hoặc các event/schema công khai. Không được import trực tiếp file bên trong module khác.
+6. Không được dùng trực tiếp database table của module khác để cập nhật dữ liệu. Việc đọc projection (dạng dữ liệu đọc) hoặc join chỉ được phép theo contract đã thống nhất. Các invariant (bất biến nghiệp vụ) vẫn thuộc về module sở hữu (owner).
+7. Thư mục `shared/` chỉ chứa các primitive (thành phần cơ sở) kỹ thuật ổn định. Ví dụ như Result/Error, clock (thời gian), ID, transaction context. Thư mục này không được biến thành “misc/utils” (nơi chứa code tạp nham).
 
 ## 6. Boundary frontend
+*Tóm tắt: Ranh giới và tổ chức bên trong các tính năng (features) của frontend.*
 
 Mỗi `src/features/<feature>/` nên chứa:
 
@@ -226,32 +232,35 @@ features/market/
 
 Quy tắc:
 
-- Server state (listing, project, conversation, post, saved) do query/cache layer quản lý; không copy vào global Context.
-- Global state chỉ giữ theme, modal/overlay, current city nếu product coi là preference và auth/session facade.
-- URL giữ state có thể chia sẻ: resource ID, tab, filter/sort/page khi OQ-051 được duyệt.
-- API DTO được sinh từ `contracts/openapi.yaml`; mapper chuyển sang view model khi UI cần hình dạng khác.
-- Feature không đọc trực tiếp mock production. Mock fixture chỉ dùng dev/test và khớp contract.
-- Error/loading/empty/offline state là một phần của component contract, không phát sinh ngẫu nhiên ở từng màn hình.
+- Server state (dữ liệu từ server) như listing, project, conversation, post, saved do query/cache layer quản lý. Không copy các dữ liệu này vào global Context.
+- Global state chỉ lưu giữ theme (giao diện), modal/overlay, current city (nếu được coi là tuỳ chọn người dùng). Ngoài ra nó cũng giữ auth/session facade (quản lý phiên đăng nhập).
+- URL có thể dùng để giữ các state cần chia sẻ. Ví dụ như resource ID, tab đang mở, trạng thái filter/sort/page (khi OQ-051 được duyệt).
+- API DTO (Đối tượng truyền dữ liệu) được sinh tự động từ `contracts/openapi.yaml`. Tầng mapper (chuyển đổi) sẽ đổi nó sang view model (mô hình hiển thị) khi UI cần cấu trúc khác.
+- Feature không được đọc trực tiếp mock cho production. Mock fixture (dữ liệu mẫu) chỉ được dùng cho quá trình dev/test và phải khớp với contract.
+- Các trạng thái error/loading/empty/offline là một phần của component contract. Nó không được phát sinh ngẫu nhiên ở từng màn hình khác nhau.
 
 ## 7. Contract và generated code
+*Tóm tắt: Quy định về hợp đồng giao tiếp API (contract) và mã nguồn tự sinh.*
 
-- `contracts/openapi.yaml` là nguồn sự thật cho REST/SSE envelope ở mức mô tả được OpenAPI hỗ trợ.
-- API implementation và frontend client đều được kiểm tra lệch contract trong CI.
-- Generated code nằm trong `src/api/generated/`; FastAPI backend dùng Pydantic schemas làm contract và có thể sinh OpenAPI tự động. Các file generated có header và không chỉnh tay.
-- Event schema có version, namespace và backward-compatibility rule.
-- Ví dụ request/response đã duyệt nằm ở `contracts/examples/`; test contract sử dụng chính ví dụ này.
-- Không đưa domain entity trực tiếp ra API; presenter tạo DTO ổn định.
+- File `contracts/openapi.yaml` là nguồn sự thật (source of truth) cho REST/SSE envelope. Điều này áp dụng ở mức độ mô tả mà OpenAPI hỗ trợ.
+- Việc kiểm tra lệch contract giữa API implementation (hiện thực API) và frontend client sẽ được thực hiện tự động trong CI.
+- Code tự sinh (generated code) được đặt trong `src/api/generated/`. Backend FastAPI dùng Pydantic schemas làm contract. Nó có thể tự động sinh ra OpenAPI. Các file tự sinh sẽ có header và tuyệt đối không được chỉnh sửa bằng tay.
+- Event schema (cấu trúc sự kiện) phải có version (phiên bản), namespace (không gian tên) và tuân thủ quy tắc backward-compatibility (tương thích ngược).
+- Ví dụ về request/response đã được duyệt sẽ nằm ở `contracts/examples/`. Test contract sẽ sử dụng chính các ví dụ này.
+- Không đưa domain entity (thực thể nghiệp vụ) trực tiếp ra ngoài API. Tầng presenter (trình bày) cần tạo ra các DTO ổn định để trả về.
 
 ## 8. Database migration và seed
+*Tóm tắt: Quản lý sự thay đổi của cơ sở dữ liệu và dữ liệu mẫu (seed).*
 
-- Mỗi migration có thứ tự, review và checksum; migration đã chạy production không sửa lại.
-- Thay đổi phá vỡ dùng quy trình `expand → backfill → switch → contract`.
-- Backfill dài chạy bằng job có checkpoint, không giữ transaction lớn trong deployment.
-- Seed chỉ gồm reference/dev demo data không nhạy cảm; dữ liệu mock hiện tại phải qua data-quality review trước khi dùng.
-- Migration/schema check chạy trong CI; deploy app chỉ sau bước migration tương thích ngược thành công.
-- Rollback ưu tiên rollback ứng dụng/feature flag; database migration phá hủy cần kế hoạch riêng và backup xác minh.
+- Mỗi migration (kịch bản thay đổi DB) cần có thứ tự, được review và có checksum. Các migration đã chạy trên production thì không được sửa lại.
+- Những thay đổi phá vỡ (breaking changes) phải tuân theo quy trình: `expand → backfill → switch → contract` (mở rộng → điền dữ liệu → chuyển đổi → giới hạn contract).
+- Backfill (cập nhật dữ liệu cũ) với thời gian chạy dài phải dùng job có checkpoint. Không giữ transaction lớn quá lâu trong quá trình deployment (triển khai).
+- Seed (dữ liệu mẫu) chỉ bao gồm dữ liệu demo/reference cho môi trường dev. Tuyệt đối không chứa thông tin nhạy cảm. Dữ liệu mock hiện tại phải qua bước data-quality review (đánh giá chất lượng) trước khi sử dụng.
+- Migration/schema check phải được chạy trong hệ thống CI. Ứng dụng chỉ được deploy sau khi bước migration tương thích ngược đã thành công.
+- Khi cần rollback (khôi phục), ưu tiên rollback phiên bản ứng dụng hoặc feature flag. Các database migration có tính phá hủy cần có kế hoạch riêng và phải xác minh bản backup.
 
 ## 9. Tests đề xuất
+*Tóm tắt: Các loại test cần thiết và vị trí tương ứng.*
 
 | Lớp | Vị trí | Mục đích |
 |---|---|---|
@@ -262,46 +271,50 @@ Quy tắc:
 | Frontend component | gần feature | Loading/error/empty/accessibility và mutation state |
 | E2E | thư mục được chọn ở implementation planning | Luồng search, saved, lead, booking conflict, chat, post/comment |
 
-Không chốt framework test trong giai đoạn thiết kế.
+Chưa chốt framework test trong giai đoạn thiết kế này.
 
 ## 10. Configuration và secrets
+*Tóm tắt: Quản lý cấu hình môi trường và các thông tin bảo mật.*
 
-- Parse/validate environment một lần ở startup; fail fast nếu cấu hình bắt buộc thiếu.
-- Tách config theo service/env nhưng không commit secret.
-- Tên biến môi trường có namespace theo dịch vụ; không dùng config ngầm từ frontend cho backend.
-- Public frontend config chỉ chứa giá trị an toàn công khai; model key, webhook secret, DB credential luôn ở server secret manager.
-- Feature flags có owner, expiry date và default an toàn; không dùng flag để thay authorization.
+- Hệ thống chỉ parse/validate environment (phân tích và kiểm tra biến môi trường) một lần ở thời điểm startup. Ứng dụng sẽ fail fast (dừng ngay lập tức) nếu thiếu cấu hình bắt buộc.
+- Cấu hình phải được tách theo từng service và môi trường. Không bao giờ commit secret (thông tin bảo mật) vào source code.
+- Tên biến môi trường cần có namespace theo dịch vụ. Không dùng chung config ngầm từ frontend cho backend.
+- Public frontend config (cấu hình frontend công khai) chỉ chứa những giá trị an toàn, có thể công khai. Các key nhạy cảm như model key, webhook secret, DB credential luôn phải nằm ở server secret manager.
+- Feature flags (cờ tính năng) phải có owner, expiry date (ngày hết hạn) và default (giá trị mặc định) an toàn. Không dùng feature flag để thay thế cơ chế authorization (phân quyền).
 
 ## 11. Naming và conventions
+*Tóm tắt: Quy chuẩn đặt tên và các thông lệ viết code.*
 
-- Source code identifier tiếng Anh; tài liệu/product copy có thể tiếng Việt.
-- Database: `snake_case`, bảng số nhiều, khóa UUID `<entity>_id`, timestamp `*_at`.
-- API: resource danh từ số nhiều, `kebab-case` chỉ khi cần; JSON `camelCase`.
-- Event: `<bounded_context>.<entity>.<past_tense_action>.v1`, ví dụ `bookings.hold.created.v1`.
-- Money: hậu tố `...AmountVnd`; không dùng số “giá” không kèm đơn vị.
-- Time: `timestamptz`/RFC3339 UTC; trường display string không làm nguồn dữ liệu.
-- ID đối tác lưu riêng `external_id`, `source_id`; không dùng thay canonical UUID.
+- Identifier (định danh) trong source code phải viết bằng tiếng Anh. Tuy nhiên, tài liệu và product copy có thể viết bằng tiếng Việt.
+- Đối với database: dùng `snake_case`, tên bảng là danh từ số nhiều. Khóa chính dùng định dạng UUID với tên `<entity>_id`. Các trường timestamp có hậu tố `*_at`.
+- Đối với API: dùng resource là danh từ số nhiều. Chỉ dùng `kebab-case` khi thực sự cần. Chuỗi JSON dùng định dạng `camelCase`.
+- Event (sự kiện) đặt tên theo format: `<bounded_context>.<entity>.<past_tense_action>.v1`. Ví dụ: `bookings.hold.created.v1`.
+- Tiền tệ (Money): phải có hậu tố `...AmountVnd`. Không dùng các số “giá” đơn thuần mà không kèm đơn vị.
+- Thời gian (Time): sử dụng kiểu `timestamptz` hoặc RFC3339 UTC. Các trường display string (chuỗi hiển thị) không được dùng làm nguồn dữ liệu chính.
+- ID đối tác (partner ID) phải được lưu ở các trường riêng biệt như `external_id`, `source_id`. Không dùng chúng để thay thế khóa chính canonical UUID.
 
 ## 12. Lộ trình chuyển đổi đề xuất sau khi duyệt
+*Tóm tắt: Các bước thực hiện để chuyển đổi từ dự án hiện tại sang kiến trúc mới.*
 
-Lộ trình này chỉ là thứ tự giảm rủi ro, chưa phải authorization để viết code:
+Lộ trình này chỉ thể hiện thứ tự để giảm thiểu rủi ro. Đây chưa phải là authorization (sự cho phép) để bắt đầu viết code:
 
-1. Chốt P0, OpenAPI conventions và schema nền tảng.
-2. Dựng identity/data source boundary và catalog read-only.
-3. Chuyển listing/project/unit read/search từ mock sang API theo lát dọc.
-4. Thêm saved/interests và lead với auth/idempotency/audit.
-5. Thêm conversation + AI read-only tools/citation/eval.
-6. Chỉ bật booking/hold sau khi state/source/transaction được duyệt và test concurrency.
-7. Chỉ bật social mutation sau khi permission/moderation/reporting policy được duyệt.
-8. Xóa mock/localStorage production path sau migration và telemetry xác nhận ổn định.
+1. Chốt các vấn đề P0, các OpenAPI conventions và schema nền tảng.
+2. Dựng identity/data source boundary và phần catalog ở chế độ read-only (chỉ đọc).
+3. Chuyển các chức năng read/search của listing/project/unit từ mock sang API theo từng lát dọc.
+4. Thêm chức năng saved/interests và lead (khách hàng tiềm năng). Phần này phải đi kèm auth/idempotency/audit (xác thực/tính lũy đẳng/lưu vết).
+5. Thêm tính năng conversation (hội thoại) và các AI read-only tools/citation/eval.
+6. Chỉ bật tính năng booking/hold sau khi các vấn đề về state/source/transaction đã được duyệt. Cần kiểm tra kỹ các case concurrency (đồng thời).
+7. Chỉ bật các social mutation (chỉnh sửa dữ liệu mxh) sau khi permission/moderation/reporting policy (chính sách phân quyền/kiểm duyệt/báo cáo) được duyệt.
+8. Xóa các luồng chạy mock hoặc localStorage trên production. Chỉ xóa sau khi migration xong và telemetry (hệ thống đo lường) xác nhận đã ổn định.
 
 ## 13. Checklist review cấu trúc
+*Tóm tắt: Các hạng mục cần kiểm tra để đảm bảo cấu trúc dự án đáp ứng yêu cầu.*
 
-- [ ] Team thống nhất giữ một repository hay tách frontend/backend.
-- [ ] Python FastAPI stack (SQLAlchemy, Alembic, Pydantic) được setup và benchmark.
-- [ ] Module owners và public contracts được duyệt.
-- [ ] OpenAPI/code generation workflow được duyệt.
-- [ ] Migration/seed/test conventions phù hợp CI/CD dự kiến.
-- [ ] Router/deep link và auth strategy đã trả lời.
-- [ ] Không có folder/service được tạo chỉ để dự đoán nhu cầu chưa xác nhận.
+- [ ] Team đã thống nhất việc giữ một repository (monorepo) hay tách rời frontend/backend.
+- [ ] Stack Python FastAPI (SQLAlchemy, Alembic, Pydantic) đã được setup và benchmark.
+- [ ] Module owners và các public contracts đã được cấp phép và duyệt.
+- [ ] Workflow (luồng công việc) OpenAPI và code generation đã được duyệt.
+- [ ] Các quy ước về migration, seed, và test phù hợp với hệ thống CI/CD dự kiến.
+- [ ] Chiến lược cho Router/deep link và auth đã được trả lời rõ ràng.
+- [ ] Không có thư mục hay service nào được tạo ra chỉ để dự đoán những nhu cầu chưa xác nhận.
 

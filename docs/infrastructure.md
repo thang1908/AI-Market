@@ -3,20 +3,22 @@
 ## 1. Trạng thái
 
 - Trạng thái: **Proposed — chờ review**.
-- Thiết kế ở mức provider-neutral vì cloud/region/data residency chưa được chọn (OQ-043).
-- Không đưa tên dịch vụ cụ thể của AWS/GCP/Azure vào baseline để tránh giả định.
-- Capacity, SLO, RPO/RTO và ngân sách chưa có số (OQ-044..046); mọi sizing hiện chỉ là topology, không phải cam kết.
+- Thiết kế ở mức **không gắn với nhà cung cấp cụ thể** (provider-neutral), vì cloud/region/nơi lưu trữ dữ liệu chưa được chọn — xem OQ-043 (chọn cloud nào, vùng nào?).
+- Không đưa tên dịch vụ cụ thể của AWS/GCP/Azure vào thiết kế ban đầu để tránh giả định.
+- Công suất, SLO (cam kết chất lượng dịch vụ), RPO/RTO (mất bao nhiêu dữ liệu / phục hồi bao lâu) và ngân sách chưa có số — xem OQ-044..046. Mọi kích thước hiện chỉ là sơ đồ topology, không phải cam kết.
 
 ## 2. Mục tiêu
 
-- Triển khai frontend, API và worker độc lập theo môi trường.
-- Giữ API/worker stateless để scale ngang.
-- Bảo vệ PostgreSQL, object storage, secret và dữ liệu PII khỏi truy cập công khai.
-- Hỗ trợ migration, rollback, backup/restore, audit và quan sát end-to-end.
-- Kiểm soát chi phí AI/media/egress và chỉ thêm thành phần khi có số đo.
-- Cung cấp đường nâng cấp mà không buộc microservice hoặc multi-region từ đầu.
+- Triển khai frontend, API và worker **độc lập** theo từng môi trường (dev/staging/production).
+- Giữ API/worker **stateless** (không lưu trạng thái trong bộ nhớ) để dễ mở rộng ngang (thêm instance).
+- Bảo vệ PostgreSQL, object storage (kho lưu file), secret (mật khẩu/key) và dữ liệu cá nhân (PII) khỏi truy cập công khai.
+- Hỗ trợ migration (thay đổi database), rollback (quay lại phiên bản cũ), backup/restore, audit (nhật ký thao tác) và giám sát toàn bộ hệ thống.
+- Kiểm soát chi phí AI/media/egress (lưu lượng ra ngoài). Chỉ thêm thành phần khi có số đo chứng minh cần.
+- Cho phép nâng cấp dần mà không buộc phải tách microservice hay chạy nhiều vùng ngay từ đầu.
 
-## 3. Topology production logic
+## 3. Topology production
+
+> Sơ đồ bên dưới cho thấy luồng kết nối từ người dùng tới các thành phần hệ thống.
 
 ```mermaid
 flowchart TB
@@ -67,104 +69,114 @@ flowchart TB
     db --> obs
 ```
 
-Object storage có thể được CDN phục vụ trực tiếp qua origin access; signed upload URL cho client không cho phép list bucket hoặc ghi ngoài prefix đã cấp.
+Object storage có thể được CDN (mạng phân phối nội dung) phục vụ trực tiếp. Client upload file bằng signed URL (URL có chữ ký tạm thời) — URL này chỉ cho phép ghi vào thư mục được cấp, không cho phép liệt kê hay xóa file khác.
 
 ## 4. Môi trường
 
-| Môi trường | Mục đích | Dữ liệu | Quy tắc đề xuất |
+| Môi trường | Mục đích | Dữ liệu | Quy tắc |
 |---|---|---|---|
-| Local | Phát triển frontend/API/worker | Fixture/seed giả lập, không PII | Container/service dependencies tối thiểu; provider mock hoặc dev credential riêng |
-| Dev | Tích hợp liên tục | Synthetic/test | Có thể scale-to-zero; không share secret production |
-| Staging | Pre-production, migration/e2e/load canary | Synthetic hoặc sanitized theo policy | Topology gần production; sandbox partner/model |
-| Production | Người dùng thật | Production/PII | Account/project/network/secret tách riêng; break-glass/audit |
+| **Local** | Phát triển trên máy lập trình viên | Dữ liệu giả (fixture/seed), không chứa PII | Chỉ cần container tối thiểu. Provider dùng mock hoặc credential dev riêng |
+| **Dev** | Tích hợp liên tục (CI) | Dữ liệu test tổng hợp | Có thể tắt khi không dùng (scale-to-zero). Không dùng chung secret với production |
+| **Staging** | Kiểm thử trước production | Dữ liệu tổng hợp hoặc đã ẩn danh | Cấu hình gần giống production. Dùng sandbox đối tác/AI model |
+| **Production** | Người dùng thật | Dữ liệu thật, có PII | Tách riêng account/network/secret. Có audit và quy trình truy cập khẩn cấp |
 
-Số môi trường cuối chờ OQ-048. Không copy database production thô sang dev/staging; nếu cần debug dùng export tối thiểu đã token hóa/ẩn danh và có audit.
+Số môi trường cụ thể chờ OQ-048 (cần mấy môi trường?). **Không copy** database production thô sang dev/staging. Nếu cần debug, dùng export tối thiểu đã ẩn danh và có audit.
 
 ## 5. Edge, network và DNS
 
-- DNS và certificate managed; TLS hiện đại, HSTS sau khi domain/subdomain được kiểm thử.
-- CDN phục vụ static SPA/media public; HTML có cache strategy hỗ trợ rollback nhanh.
-- WAF/bot controls cho auth, AI, search, lead, booking, social mutation và webhook theo risk.
-- Chỉ load balancer/ingress public; API/worker/database không có public admin port.
-- Database chỉ nhận kết nối từ workload identity/security group được phép; mã hóa transit.
-- Egress tới LLM/partner qua allowlist/NAT/private endpoint nếu khả dụng và chi phí hợp lý.
-- Admin/debug endpoint không public; production debug UI bị tắt.
-- Webhook partner có hostname/path riêng nếu cần isolation/rate/security policy.
+> Cấu hình biên mạng: DNS, CDN, tường lửa, và các quy tắc kết nối.
 
-Chi tiết VPC/subnet/region/zone phụ thuộc provider và OQ-043.
+- **DNS** và certificate (chứng chỉ SSL) quản lý tự động. Bật TLS hiện đại, HSTS (bắt buộc dùng HTTPS) sau khi domain được kiểm thử.
+- **CDN** phục vụ SPA (trang web tĩnh) và media công khai. HTML có cache strategy hỗ trợ rollback nhanh (trỏ lại bản cũ khi cần).
+- **WAF** (tường lửa ứng dụng web) và bot controls cho các luồng nhạy cảm: đăng nhập, AI, tìm kiếm, lead, booking, đăng bài, và webhook.
+- Chỉ load balancer/ingress mở công khai. API/worker/database **không có** public admin port.
+- Database chỉ nhận kết nối từ workload identity (danh tính ứng dụng) được phép. Mã hóa dữ liệu khi truyền.
+- Kết nối ra ngoài (tới LLM, đối tác) chỉ cho phép các địa chỉ trong **danh sách trắng**. Ưu tiên dùng private endpoint (kết nối riêng) nếu có và chi phí hợp lý.
+- Admin/debug endpoint không public. Giao diện debug production bị tắt.
+- Webhook đối tác có hostname/path riêng nếu cần tách biệt bảo mật.
+
+Chi tiết VPC/subnet/region/zone phụ thuộc nhà cung cấp và OQ-043.
 
 ## 6. Compute
 
-### 6.1 Web
+> Cách triển khai các thành phần chạy code: web, API, worker, migration.
 
-- Build artifact immutable có content hash.
-- Host trên static object/CDN hoặc managed static hosting.
-- Runtime config công khai tách khỏi build secret; không bundle LLM/API secret.
-- SPA fallback/router rules được thêm sau khi deep link OQ-051 được duyệt.
+### 6.1 Web (frontend)
 
-### 6.2 API
+- Build artifact không thay đổi (immutable), có content hash để xác định phiên bản.
+- Host trên static CDN hoặc managed static hosting.
+- Config công khai (API URL, tên app) tách khỏi build secret. **Không bao giờ** đưa key LLM/API vào frontend.
+- SPA fallback/router rules thêm sau khi deep link được duyệt — xem OQ-051 (cấu trúc URL?).
 
-- Container/service stateless, health endpoints riêng `liveness` và `readiness`.
-- Scale ngang theo CPU/memory và request/concurrency metric; SSE connection count cần metric riêng.
-- Graceful shutdown: ngừng nhận request mới, hoàn tất request ngắn/đóng stream có event thích hợp.
-- Connection pool database giới hạn theo tổng replica để không làm cạn DB.
-- Resource limit/request và autoscaling min/max được sizing từ load test, không tự đặt trong tài liệu.
+### 6.2 API (FastAPI)
 
-### 6.3 Worker
+- Container/service **stateless** (không lưu session trong memory). Có health endpoint riêng: `liveness` (còn sống?) và `readiness` (sẵn sàng nhận request?).
+- Mở rộng ngang theo CPU/memory và số request đồng thời. Kết nối SSE (AI streaming) cần metric riêng.
+- Tắt an toàn (**graceful shutdown**): ngừng nhận request mới, hoàn tất request đang xử lý, đóng stream AI đúng cách.
+- Connection pool tới database giới hạn theo tổng số replica, tránh quá tải DB.
+- Giới hạn resource và autoscaling min/max được chọn dựa trên load test thực tế, không đặt số trong tài liệu.
 
-- Deploy riêng API để job nặng không ảnh hưởng latency web.
-- Có worker pool/queue class cho ingestion, notification, media và AI batch nếu tải chứng minh cần isolation.
-- Claim job có lease, heartbeat, retry, dead-letter/quarantine và idempotency.
-- Autoscale theo job lag/oldest age/concurrency, không chỉ CPU.
-- Worker shutdown trả/release lease an toàn.
+### 6.3 Worker (xử lý nền)
 
-### 6.4 Migration job
+- Deploy **tách riêng** API để job nặng không làm chậm response web.
+- Có thể chia worker pool theo loại việc: nhập liệu, thông báo, xử lý media, AI batch — chỉ khi tải chứng minh cần.
+- Nhận job có lease (khóa tạm), heartbeat (nhịp tim), retry (thử lại), dead-letter (hàng đợi lỗi) và idempotent (chạy lại không lặp).
+- Tự mở rộng theo **số job chờ** và **tuổi job cũ nhất**, không chỉ theo CPU.
+- Khi tắt worker, trả lại lease an toàn để job không bị treo.
 
-- One-shot workload từ cùng release artifact hoặc artifact migration versioned.
-- Chạy một lần với lock; output/audit rõ; fail sẽ chặn rollout app cần schema mới.
-- Migration production không chạy tự động từ mọi API replica.
+### 6.4 Migration job (thay đổi database)
+
+- Chạy 1 lần duy nhất từ artifact cùng bản release.
+- Có khóa để tránh chạy đồng thời. Ghi log rõ ràng. Nếu thất bại → **chặn** việc deploy app cần schema mới.
+- Migration production **không chạy tự động** từ mọi API replica. Chỉ chạy từ job riêng.
 
 ## 7. Data services
 
+> Cách quản lý PostgreSQL, object storage, và các dịch vụ dữ liệu khác.
+
 ### PostgreSQL
 
-- Managed PostgreSQL, mã hóa at rest/in transit, automated backup và point-in-time recovery.
-- Multi-zone/standby chỉ cấu hình theo availability/RPO/RTO được duyệt.
-- Tách credential/role: migration, API read-write, worker, monitoring; least privilege.
-- Connection pooling managed hoặc sidecar/service phù hợp provider.
-- Slow-query monitoring, storage/IO/connection/autovacuum alert.
-- Read replica/warehouse chỉ khi analytics/read load chứng minh cần; booking luôn dùng primary.
+- Dùng managed PostgreSQL. Mã hóa dữ liệu lưu trữ (at rest) và khi truyền (in transit). Backup tự động và PITR (khôi phục tới thời điểm bất kỳ).
+- Chỉ bật multi-zone/standby (chạy dự phòng nhiều zone) khi có yêu cầu uptime/RPO/RTO cụ thể đã duyệt.
+- **Tách quyền** database: role riêng cho migration, API read-write, worker, monitoring. Mỗi role chỉ có quyền tối thiểu cần thiết.
+- Connection pooling (quản lý kết nối) qua managed service hoặc sidecar phù hợp.
+- Giám sát: slow query (truy vấn chậm), dung lượng, IO, kết nối, autovacuum, deadlock.
+- Read replica (bản sao chỉ đọc) chỉ thêm khi phân tích/đọc nặng ảnh hưởng giao dịch chính. **Booking luôn dùng primary**.
 
-### Object storage
+### Object storage (kho lưu file)
 
-- Bucket/container tách theo environment và, khi cần, theo public/private/quarantine.
-- Public access block mặc định; CDN origin identity hoặc signed URL.
-- Versioning/lifecycle/retention theo loại media và policy.
-- Upload vào quarantine prefix, scan/validate rồi mới promote logical state.
-- Server-side encryption và access log/audit.
-- Không dựa vào original filename làm object key.
+- Tách bucket theo môi trường. Khi cần, tách thêm theo: public (công khai), private (riêng tư), quarantine (cách ly chờ kiểm tra).
+- Mặc định **chặn** truy cập public. Dùng CDN origin identity hoặc signed URL để cấp quyền.
+- Versioning/lifecycle/retention (giữ phiên bản/vòng đời/thời hạn lưu) theo loại media và chính sách.
+- File upload vào thư mục quarantine trước. Sau khi scan virus/validate → mới chuyển sang trạng thái chính thức.
+- Mã hóa phía server và ghi log truy cập.
+- **Không** dùng tên file gốc của người dùng làm object key (tránh xung đột, ký tự đặc biệt).
 
-### Redis/search/managed queue
+### Redis / search engine / managed queue
 
-Không provision baseline. Chỉ thêm bằng ADR sau metric/threshold OQ-050:
+**Không triển khai** ở giai đoạn đầu. Chỉ thêm khi có số liệu chứng minh cần — xem OQ-050 (khi nào đủ bằng chứng?):
 
-- Redis cho distributed rate-limit/hot ephemeral cache, không cho inventory truth.
-- Search cluster khi PostgreSQL search không đạt quy mô/chất lượng.
-- Managed queue/broker khi DB job/outbox không đáp ứng throughput/fan-out/isolation.
+- **Redis**: cho giới hạn tốc độ truy cập (rate-limit) và cache tạm, **không** dùng làm nguồn sự thật cho tồn kho.
+- **Search engine** (Elasticsearch/OpenSearch): khi PostgreSQL full-text search không đạt chất lượng/quy mô.
+- **Message queue** (RabbitMQ/SQS): khi DB job/outbox không đáp ứng throughput hoặc cần tách biệt.
 
-Việc “để sẵn” dịch vụ không dùng vẫn tăng chi phí, attack surface và on-call burden.
+Dịch vụ "để sẵn" không dùng vẫn tốn tiền, tăng rủi ro bảo mật, và tăng gánh nặng vận hành.
 
-## 8. Secret, key và identity workload
+## 8. Secret, key và danh tính workload
 
-- Secret trong managed secret store; IaC/state/CI log/repository không chứa plaintext secret.
-- Workload identity/short-lived credential ưu tiên hơn static access key.
-- Secret tách theo environment/provider/use case và rotation owner.
-- Database credential rotation không yêu cầu rebuild image.
-- Encryption keys do managed KMS; key policy tách người quản trị key và workload sử dụng.
-- LLM, notification, map, partner webhook credential có quota/permission riêng.
-- Break-glass production có time-bound approval và audit; quy trình cụ thể chờ tổ chức vận hành.
+> Cách quản lý mật khẩu, key API, và quyền truy cập của ứng dụng.
 
-## 9. CI/CD và artifact supply chain
+- Secret lưu trong **managed secret store** (kho bí mật quản lý bởi cloud). Không lưu secret dạng text thuần trong code, IaC state, CI log hay repository.
+- Ưu tiên **workload identity** (danh tính ứng dụng tự động) hơn static access key (key cố định).
+- Tách secret theo: môi trường, nhà cung cấp, mục đích sử dụng. Mỗi secret có người chịu trách nhiệm xoay vòng (rotation).
+- Xoay vòng credential database **không cần** rebuild lại container image.
+- Key mã hóa do managed KMS quản lý. Tách riêng: người quản trị key ≠ workload dùng key.
+- Credential cho LLM, notification, bản đồ, webhook đối tác có quota/quyền riêng.
+- Truy cập khẩn cấp production (**break-glass**) cần phê duyệt có thời hạn và ghi audit. Quy trình cụ thể chờ tổ chức vận hành.
+
+## 9. CI/CD và chuỗi cung ứng artifact
+
+> Quy trình từ commit code → kiểm tra → build → triển khai.
 
 ```mermaid
 flowchart LR
@@ -181,147 +193,158 @@ flowchart LR
     prod --> verify["SLO/error/AI cost & quality verification"]
 ```
 
-Pipeline đề xuất:
+Các bước pipeline đề xuất:
 
-1. Install dependencies (pip/uv lock); type check (mypy/pyright) và pytest.
-2. Validate OpenAPI/event schema backward compatibility.
-3. Scan secret/dependency/license/container/IaC; tạo SBOM và ký artifact nếu platform hỗ trợ.
-4. Build một lần, promote cùng immutable artifact qua môi trường.
-5. Chạy migration compatibility và smoke/e2e.
-6. AI prompt/model/index change chạy eval gate riêng, kể cả khi không đổi code.
-7. Progressive/canary/blue-green theo capability provider; có auto/manual rollback rule.
-8. Post-deploy verify request errors, DB, job lag, data freshness, AI safety/cost.
+1. Cài dependencies (pip/uv lock). Chạy type check (mypy/pyright) và pytest.
+2. Kiểm tra OpenAPI/event schema tương thích ngược (không phá hỏng phiên bản cũ).
+3. Quét bảo mật: secret lộ, dependency có lỗ hổng, license, container, IaC. Tạo SBOM (danh mục phần mềm) nếu platform hỗ trợ.
+4. Build **một lần** duy nhất. Promote cùng artifact qua các môi trường (dev → staging → production).
+5. Chạy migration compatibility test và smoke/e2e test.
+6. Thay đổi AI prompt/model/index chạy eval gate riêng, **kể cả khi không đổi code**.
+7. Triển khai từ từ (progressive/canary/blue-green). Có quy tắc rollback tự động và thủ công.
+8. Sau deploy: kiểm tra lỗi request, DB, job tồn đọng, dữ liệu cũ, AI safety/cost.
 
 Branching/review rules và CI provider chưa được chọn.
 
 ## 10. Deployment và rollback
 
-- API change tương thích ngược với frontend đang cache và worker phiên bản trước trong cửa sổ rollout.
-- Database dùng expand/backfill/switch/contract; destructive contract ở release sau.
-- Feature flag cho source feed, AI model/prompt, social publishing và booking; flag có owner/expiry.
-- Rollback application dùng artifact trước; không mặc định rollback migration đã ghi dữ liệu.
-- Web asset/HTML cache strategy cho phép trỏ lại release ổn định.
-- Worker event schema versioned; consumer xử lý event cũ trong retention window.
-- Kill switch cho AI/provider, ingestion source và mutation rủi ro.
+> Cách triển khai phiên bản mới và quay lại khi có lỗi.
 
-## 11. Observability
+- API thay đổi phải **tương thích ngược** với frontend đang cache và worker phiên bản cũ trong thời gian triển khai.
+- Database dùng quy trình **expand → backfill → switch → contract**: thêm cột mới → copy dữ liệu → chuyển sang dùng cột mới → xóa cột cũ ở release sau.
+- Feature flag (bật/tắt tính năng) cho: nguồn dữ liệu, AI model/prompt, đăng bài xã hội, booking. Mỗi flag có người chịu trách nhiệm và ngày hết hạn.
+- Rollback ứng dụng: dùng artifact phiên bản trước. **Không** mặc định rollback migration đã ghi dữ liệu.
+- Web asset/HTML cache cho phép trỏ lại bản release ổn định ngay lập tức.
+- Worker event schema có version. Consumer phải xử lý được event cũ trong thời gian lưu giữ.
+- **Kill switch** (nút tắt khẩn cấp) cho: AI/provider, nguồn nhập liệu, và các thao tác thay đổi dữ liệu rủi ro.
 
-### Logs
+## 11. Observability (giám sát hệ thống)
 
-- JSON structured, timestamp UTC, service/env/version, request/trace ID, module, outcome.
-- Redact phone/email/token/cookie/prompt/private note; không log request/response body mặc định.
-- Audit log tách retention và access khỏi application log.
-- Log sampling chỉ cho traffic thành công; không bỏ error/security event quan trọng.
+> Cách theo dõi, đo lường và cảnh báo tình trạng hệ thống.
 
-### Metrics
+### Logs (nhật ký)
 
-| Lớp | Metrics chính |
+- Định dạng JSON có cấu trúc: timestamp UTC, service/env/version, request/trace ID, module, kết quả.
+- **Ẩn** thông tin nhạy cảm: số điện thoại, email, token, cookie, prompt AI, ghi chú riêng. Không log request/response body mặc định.
+- Audit log (nhật ký thao tác quan trọng) tách riêng khỏi application log, có thời hạn lưu và quyền truy cập riêng.
+- Log sampling (lấy mẫu) chỉ áp dụng cho traffic thành công. **Không bỏ** error/security event.
+
+### Metrics (chỉ số)
+
+| Lớp | Chỉ số chính |
 |---|---|
-| Edge/API | RPS, status/error code, latency, active SSE, rate-limit/WAF block |
-| Database | connections, pool wait, CPU/IO/storage, slow query, lock wait/deadlock, replica lag nếu có |
-| Worker | queue depth, oldest job, processing latency, retry/dead letter/quarantine |
-| Data | source sync success, record errors, observed age, stale unit/price percentage |
-| Booking/lead | creation/conflict/state transition, assignment lag nếu SLA được duyệt |
-| AI | TTFT/latency, tokens/cost, model/tool errors, citation/safety/fallback/eval metrics |
-| Media | upload/scan/transform errors, storage/egress volume |
+| Edge/API | Số request/giây, mã lỗi, độ trễ, số kết nối SSE đang mở, số lần bị WAF chặn |
+| Database | Số kết nối, thời gian chờ pool, CPU/IO/dung lượng, truy vấn chậm, deadlock, độ trễ replica |
+| Worker | Số job chờ, tuổi job cũ nhất, thời gian xử lý, retry/dead-letter |
+| Data | Đồng bộ nguồn thành công/thất bại, tuổi dữ liệu, % đơn vị/giá cũ |
+| Booking/lead | Số tạo/xung đột/chuyển trạng thái, thời gian phân công |
+| AI | Thời gian chữ đầu tiên, độ trễ, token/chi phí, lỗi model/tool, citation/safety/eval |
+| Media | Lỗi upload/scan/xử lý, dung lượng/lưu lượng ra |
 
-### Tracing
+### Tracing (theo dõi luồng request)
 
-- Trace edge → API → DB/external và outbox/job continuation qua correlation metadata.
-- Sampling theo risk/cost; không đưa raw content/PII vào span attributes.
+- Theo dõi từ edge → API → DB/dịch vụ ngoài, và từ outbox/job tiếp tục, bằng correlation metadata (mã liên kết).
+- Lấy mẫu theo mức rủi ro/chi phí. **Không đưa** nội dung thô hoặc PII vào span attributes.
 
-### Alerting
+### Alerting (cảnh báo)
 
-- Mỗi alert cần user impact, owner, severity, runbook, dedup/silence rule.
-- Ngưỡng dựa trên SLO/baseline, không đặt số tùy ý trong thiết kế.
-- Alert chính: availability/error burn, DB capacity/backup failure, oldest critical job, stale inventory, booking invariant, AI safety/cost spike, partner failure.
+- Mỗi cảnh báo cần: mô tả ảnh hưởng người dùng, người chịu trách nhiệm, mức độ, runbook (hướng dẫn xử lý), quy tắc gộp/im lặng.
+- Ngưỡng dựa trên SLO/baseline thực tế, không đặt số tùy ý.
+- Cảnh báo chính: lỗi/downtime vượt ngưỡng, DB sắp đầy/backup lỗi, job tồn đọng quá lâu, dữ liệu tồn kho cũ, xung đột booking, AI lỗi/chi phí tăng đột biến, đối tác mất kết nối.
 
-## 12. Backup, DR và business continuity
+## 12. Backup, DR và kinh doanh liên tục
 
-- Automated DB backup + PITR; backup encryption và access audit.
-- Object versioning/lifecycle theo loại dữ liệu; không coi replication là backup duy nhất.
-- IaC, migration và artifact registry cho phép tái tạo service.
-- Restore test định kỳ vào môi trường cô lập với kiểm tra integrity/application smoke.
-- Runbook cho database restore, region/provider outage, credential compromise, partner data corruption và AI provider outage.
-- Single-region hay multi-region, backup window, RPO/RTO và failover automation chỉ chốt sau OQ-043/OQ-045/OQ-046.
-- Multi-region active-active không đề xuất mặc định vì booking consistency, dữ liệu residency và chi phí phức tạp.
+> Cách bảo vệ dữ liệu và phục hồi khi có sự cố.
 
-## 13. Security controls
+- Backup database tự động + PITR (khôi phục tới thời điểm bất kỳ). Backup được mã hóa và ghi log truy cập.
+- Object storage có versioning/lifecycle theo loại dữ liệu. **Không** coi replication là backup duy nhất.
+- IaC (Infrastructure as Code), migration và artifact registry cho phép **tái tạo lại** toàn bộ service từ đầu.
+- Test restore định kỳ vào môi trường cô lập. Kiểm tra dữ liệu đúng và ứng dụng chạy được.
+- Cần runbook cho: restore database, sự cố vùng/provider, lộ credential, dữ liệu đối tác bị hỏng, AI provider bị sập.
+- Single-region hay multi-region, thời gian backup, RPO/RTO và failover tự động chỉ chốt sau OQ-043/OQ-045/OQ-046.
+- Multi-region active-active (chạy đồng thời nhiều vùng) **không đề xuất** mặc định vì phức tạp: tính nhất quán booking, yêu cầu lưu trữ dữ liệu trong nước, và chi phí cao.
 
-| Lớp | Control đề xuất |
+## 13. Security controls (kiểm soát bảo mật)
+
+| Lớp | Biện pháp đề xuất |
 |---|---|
-| SDLC | Review, protected branch, signed artifact/SBOM, dependency/secret/IaC scan |
-| Edge | TLS, WAF, rate/bot control, DDoS capability của provider |
-| Identity | IdP được duyệt, MFA cho privileged actor, short session/rotation theo threat model |
-| Authorization | Server-side RBAC/resource/org checks; deny by default |
-| Data | Encryption, PII classification/redaction, least privilege, retention/purge |
-| Media | Signed upload, MIME/checksum/size validation, malware scan, private/public separation |
-| Webhook | Signature, timestamp, replay protection, schema/idempotency, source isolation |
-| AI | Provider policy, prompt injection defenses, tool allowlist, PII control, safety/eval |
-| Operations | Environment isolation, break-glass, immutable audit, patch/vulnerability SLA cần owner |
+| SDLC (quy trình dev) | Review code, protected branch, ký artifact/SBOM, quét dependency/secret/IaC |
+| Edge (biên mạng) | TLS, WAF, chống bot/DDoS |
+| Identity (danh tính) | IdP được duyệt, MFA cho admin, session ngắn hạn |
+| Authorization (phân quyền) | Kiểm tra quyền phía server. Mặc định: **từ chối** |
+| Data (dữ liệu) | Mã hóa, phân loại/ẩn PII, quyền tối thiểu, xóa theo thời hạn |
+| Media (file/ảnh/video) | Signed upload, kiểm tra MIME/checksum/kích thước, quét malware, tách public/private |
+| Webhook (API đối tác gọi vào) | Chữ ký, timestamp, chống replay, idempotent |
+| AI | Chính sách provider, chống prompt injection, chỉ cho phép tool trong danh sách, kiểm soát PII, safety/eval |
+| Operations (vận hành) | Tách môi trường, break-glass có audit, nhật ký không sửa được, SLA vá lỗi bảo mật |
 
-Threat modeling theo luồng phải diễn ra trước implementation của auth, booking, media, social mutation và external ingestion.
+Cần làm **threat modeling** (phân tích mối đe dọa) theo từng luồng trước khi implement: auth, booking, media, đăng bài, và nhập liệu từ bên ngoài.
 
-## 14. Scalability plan
+## 14. Kế hoạch mở rộng (scalability)
 
-1. Thu thập traffic/data/job/AI baseline và tối ưu query/index/connection pool.
-2. Scale stateless API/worker và database vertical capacity trong giới hạn hợp lý.
-3. Thêm read replica/analytics isolation nếu read/OLAP ảnh hưởng OLTP.
-4. Thêm cache/search/queue theo bottleneck đã đo.
-5. Partition/archive bảng append-only khi maintenance/query chứng minh cần.
-6. Tách service chỉ khi module có nhu cầu deploy/scale/ownership/compliance độc lập.
+> Thứ tự mở rộng hệ thống khi tải tăng.
 
-Trigger số cụ thể chờ OQ-044/OQ-050. Không dùng DAU làm chỉ số duy nhất; cần peak RPS, concurrent SSE, dataset, query shape, job lag và provider quota.
+1. Thu thập baseline (điểm xuất phát) về traffic/dữ liệu/job/AI. Tối ưu query/index/connection pool.
+2. Mở rộng ngang API/worker stateless. Tăng database vertical (CPU/RAM/storage).
+3. Thêm read replica nếu analytics/đọc nặng ảnh hưởng giao dịch chính.
+4. Thêm cache/search engine/queue theo **bottleneck đã đo**, không theo dự đoán.
+5. Partition/archive (chia bảng/lưu trữ cũ) cho bảng chỉ ghi thêm (append-only) khi query/bảo trì chứng minh cần.
+6. Tách service chỉ khi module có nhu cầu deploy/scale/ownership/compliance **độc lập đã chứng minh**.
 
-## 15. Cost controls
+Số cụ thể chờ OQ-044 (quy mô dự kiến?) và OQ-050 (khi nào đủ bằng chứng?). Không dùng DAU làm chỉ số duy nhất — cần: peak RPS (request/giây cao điểm), concurrent SSE, kích thước dataset, dạng query, job tồn đọng, và quota provider.
 
-- Tag/label cost theo environment/service/team/use case khi provider hỗ trợ.
-- Budget và anomaly alert cho cloud tổng, LLM token, media storage/transcode/egress, map và notification.
-- Dev/staging scale-down/schedule nếu phù hợp nhưng không làm staging mất giá trị test.
-- CDN/compression/image variants giảm media egress.
-- Model routing/context/result limits và batch cho job không realtime sau eval.
-- Lifecycle/archive log/media/raw source theo retention; không giữ vô hạn.
-- Review idle resource, oversized DB/worker và external API retry storm.
-- Không thêm Redis/search/GPU chỉ vì “có thể cần”.
+## 15. Kiểm soát chi phí
 
-Ngưỡng ngân sách và owner chờ OQ-046.
+- Gắn tag/label chi phí theo: môi trường, service, team, mục đích sử dụng.
+- Cảnh báo ngân sách và bất thường cho: cloud tổng, token LLM, storage/transcode/egress media, bản đồ, notification.
+- Dev/staging có thể giảm quy mô/lên lịch tắt — nhưng **không** làm staging mất giá trị test.
+- Dùng CDN/compression/ảnh nhiều kích thước để giảm lưu lượng media ra ngoài.
+- AI: giới hạn context/kết quả, batch job không cần realtime. Chọn model phù hợp use case.
+- Xóa/archive log/media/dữ liệu nguồn theo thời hạn lưu giữ. Không giữ vô hạn.
+- Kiểm tra định kỳ: resource không dùng, DB/worker quá lớn, retry storm (vòng lặp thử lại) tới API ngoài.
+- **Không** thêm Redis/search engine/GPU chỉ vì "có thể cần sau này".
 
-## 16. Infrastructure as Code
+Ngưỡng ngân sách và người chịu trách nhiệm chờ OQ-046 (ngân sách bao nhiêu?).
 
-- Mọi resource production được quản lý bằng IaC sau khi provider được chọn.
-- Module reusable nhưng environment state/config tách; production state được bảo vệ/lock/audit.
-- Plan trong PR, apply qua CI role có approval; không dùng credential cá nhân dài hạn.
-- Policy-as-code cho public exposure, encryption, backup, logging, secret và tag bắt buộc.
-- Drift detection định kỳ; thay đổi khẩn cấp phải import/đồng bộ lại IaC.
-- Không commit generated state, private key hoặc secret.
+## 16. Infrastructure as Code (IaC)
 
-Cấu trúc dự kiến tại [project-structure.md](./project-structure.md); chưa tạo `infra/` trước review.
+> Quản lý hạ tầng bằng code thay vì cấu hình thủ công.
+
+- Mọi resource production được quản lý bằng IaC (Terraform/Pulumi/CDK) sau khi chọn provider.
+- Module có thể tái sử dụng, nhưng state/config tách theo môi trường. Production state được bảo vệ, khóa, và ghi audit.
+- Plan (xem trước thay đổi) trong PR. Apply (áp dụng) qua CI role có phê duyệt. Không dùng credential cá nhân dài hạn.
+- Policy-as-code bắt buộc: không mở public, phải mã hóa, phải backup, phải ghi log, phải có tag.
+- Phát hiện drift (cấu hình lệch khỏi code) định kỳ. Thay đổi khẩn cấp phải import/đồng bộ lại vào IaC.
+- **Không commit** generated state, private key hoặc secret vào repository.
+
+Cấu trúc thư mục dự kiến tại [project-structure.md](./project-structure.md). Chưa tạo `infra/` trước khi review.
 
 ## 17. Runbook tối thiểu trước production
 
-- API elevated error/latency và SSE failure.
-- Database saturation, deadlock, failover và restore.
-- Job queue lag/dead-letter và replay an toàn.
-- Inventory source stale/corrupt và quarantine/rollback source version.
-- Booking/hold invariant conflict hoặc expiry failure.
-- LLM outage, quota/cost spike, unsafe output và kill switch.
-- Media malware/abuse/takedown.
-- Social moderation incident và PII leakage.
-- Credential compromise/rotation.
-- Deployment/migration rollback.
+> Danh sách các tình huống sự cố cần có hướng dẫn xử lý trước khi lên production.
 
-Owner/on-call/escalation chờ OQ-049.
+- API lỗi nhiều / chậm, và SSE (streaming AI) bị đứt.
+- Database: quá tải, deadlock, failover, và restore.
+- Job queue: tồn đọng, dead-letter (job lỗi liên tục), replay (chạy lại) an toàn.
+- Nguồn tồn kho: dữ liệu cũ/hỏng, cách ly và rollback phiên bản nguồn.
+- Booking/giữ chỗ: xung đột trạng thái hoặc hết hạn không giải phóng căn.
+- LLM: sập, vượt quota/chi phí, output không an toàn, bật kill switch.
+- Media: phát hiện malware, nội dung vi phạm, yêu cầu gỡ bỏ.
+- Cộng đồng: sự cố kiểm duyệt, lộ thông tin cá nhân.
+- Credential bị lộ → xoay vòng (rotation).
+- Deployment/migration cần rollback.
 
-## 18. Cổng sẵn sàng production
+Người trực vận hành và quy trình escalation chờ OQ-049 (ai trực vận hành?).
 
-- [ ] Cloud/region/data residency, account ownership và budget được duyệt.
-- [ ] Capacity test phản ánh OQ-044; SLO/RPO/RTO và alert/runbook có owner.
-- [ ] Auth/RBAC/PII/consent/threat model và penetration/security review phù hợp rủi ro.
+## 18. Checklist sẵn sàng production
+
+- [ ] Cloud/region/nơi lưu dữ liệu, tài khoản, và ngân sách được duyệt.
+- [ ] Test tải phản ánh OQ-044. SLO/RPO/RTO và cảnh báo/runbook có người chịu trách nhiệm.
+- [ ] Auth/phân quyền/PII/consent/threat model và kiểm tra bảo mật phù hợp rủi ro.
 - [ ] Backup/PITR và restore test thành công.
 - [ ] Migration/rollback/feature flag/kill switch được diễn tập.
-- [ ] Partner feed có signature, idempotency, freshness và quarantine.
-- [ ] Booking concurrency/idempotency được integration/load test nếu bật.
-- [ ] Social moderation/reporting policy được duyệt nếu bật UGC mutation.
-- [ ] AI provider/data policy/eval/citation/safety/cost gate đạt chuẩn đã duyệt.
-- [ ] Không có secret/PII production trong frontend, repository, build log hoặc non-production data.
-
+- [ ] Feed đối tác có chữ ký, idempotent, kiểm tra độ mới, và cách ly dữ liệu lỗi.
+- [ ] Booking: test xung đột đồng thời và idempotent nếu bật.
+- [ ] Kiểm duyệt/báo cáo nội dung cộng đồng được duyệt nếu bật UGC.
+- [ ] AI: chính sách provider/dữ liệu/eval/citation/safety/cost đạt chuẩn.
+- [ ] Không có secret/PII production trong frontend, repository, build log hoặc dữ liệu non-production.
