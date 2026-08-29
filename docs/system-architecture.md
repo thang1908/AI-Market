@@ -119,23 +119,23 @@ Worker sử dụng chung mã nguồn (codebase) và hợp đồng module (module
 
 ## 5. Ranh giới module
 
-| Module | Trách nhiệm | Dữ liệu sở hữu | Không chịu trách nhiệm |
-|---|---|---|---|
-| Identity & Access | Quản lý người dùng, ánh xạ danh tính, vai trò (role), tổ chức và quyền đồng ý. | users, organizations, memberships, consents | Xếp hạng feed, phân bổ lead. |
-| Geography & Catalog | Quản lý tỉnh/thành, dự án/phân khu/tòa nhà/căn hộ gốc (canonical). | cities, districts, projects, phases, buildings, units | Giao dịch giữ chỗ hoặc booking. |
-| Listings | Quản lý tin bán/thuê, media, tìm kiếm, lưu trữ nguồn gốc tin. | listings, listing_media | Quản lý dự án gốc và trạng thái căn hộ. |
-| Inventory | Quản lý giá/số lượng (offer) từ nhà phân phối, đồng bộ dữ liệu. | unit_distributor_offers, inventory observations/sync runs | Chốt booking (ngoài state machine). |
-| Bookings | Xử lý yêu cầu, giữ chỗ (hold), hết hạn, lịch sử trạng thái, đồng thời (concurrency). | booking_requests, unit_holds, status_events | Thanh toán hoặc KYC. |
-| Leads | Xử lý yêu cầu tư vấn, liên hệ, phân bổ và vòng đời khách hàng. | consultation_requests | Gửi thông báo cụ thể cho nhà cung cấp. |
-| Saved & Interests | Lưu trữ các mục yêu thích và tín hiệu quan tâm của người dùng. | saved_items, interest_signals | Định nghĩa quy tắc xếp hạng feed. |
-| Conversations | Quản lý vòng đời hội thoại, tin nhắn và ngữ cảnh AI. | conversations, messages, contexts | Nội bộ quá trình suy luận (inference) của model. |
-| AI Orchestration | Quản lý prompt, công cụ, truy xuất dữ liệu, định tuyến model, đánh giá/trích dẫn. | ai_runs, ai_citations, feedback/eval records | Ghi đè hoặc thay đổi dữ liệu nghiệp vụ. |
-| Social | Quản lý hồ sơ công khai, bài đăng, bình luận, tương tác, theo dõi. | author_profiles, posts, comments, reactions, follows | Xác thực thông tin danh tính. |
-| Moderation | Đánh giá chính sách và ra quyết định kiểm duyệt nội dung. | moderation_decisions, reports (nếu có) | Định nghĩa chính sách sản phẩm. |
-| Market Content | Cập nhật giá thị trường, tin tức, và kiến thức rủi ro. | observations, market updates, articles | Trạng thái sẵn sàng của căn hộ gốc. |
-| Media | Quản lý vòng đời tải lên, metadata, quét/chuyển đổi file. | media_assets | Quy tắc sở hữu tin đăng. |
-| Notifications | Cấu hình, template, và lưu nhật ký gửi thông báo. | notifications, delivery attempts | Quyết định phát sinh sự kiện nghiệp vụ. |
-| Platform Jobs & Audit | Quản lý vòng đời job, outbox, và nhật ký kiểm toán. | jobs, outbox_events, audit_logs | Logic xử lý nghiệp vụ của module khác. |
+| Module                | Trách nhiệm                                                                                       | Dữ liệu sở hữu                                        | Không chịu trách nhiệm                             |
+| --------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------ |
+| Identity & Access     | Quản lý người dùng, ánh xạ danh tính, vai trò (role), tổ chức và quyền đồng ý.      | users, organizations, memberships, consents               | Xếp hạng feed, phân bổ lead.                       |
+| Geography & Catalog   | Quản lý tỉnh/thành, dự án/phân khu/tòa nhà/căn hộ gốc (canonical).                      | cities, districts, projects, phases, buildings, units     | Giao dịch giữ chỗ hoặc booking.                    |
+| Listings              | Quản lý tin bán/thuê, media, tìm kiếm, lưu trữ nguồn gốc tin.                             | listings, listing_media                                   | Quản lý dự án gốc và trạng thái căn hộ.      |
+| Inventory             | Quản lý giá/số lượng (offer) từ nhà phân phối, đồng bộ dữ liệu.                      | unit_distributor_offers, inventory observations/sync runs | Chốt booking (ngoài state machine).                  |
+| Bookings              | Xử lý yêu cầu, giữ chỗ (hold), hết hạn, lịch sử trạng thái, đồng thời (concurrency). | booking_requests, unit_holds, status_events               | Thanh toán hoặc KYC.                                 |
+| Leads                 | Xử lý yêu cầu tư vấn, liên hệ, phân bổ và vòng đời khách hàng.                      | consultation_requests                                     | Gửi thông báo cụ thể cho nhà cung cấp.          |
+| Saved & Interests     | Lưu trữ các mục yêu thích và tín hiệu quan tâm của người dùng.                        | saved_items, interest_signals                             | Định nghĩa quy tắc xếp hạng feed.                |
+| Conversations         | Quản lý vòng đời hội thoại, tin nhắn và ngữ cảnh AI.                                     | conversations, messages, contexts                         | Nội bộ quá trình suy luận (inference) của model. |
+| AI Orchestration      | Quản lý prompt, công cụ, truy xuất dữ liệu, định tuyến model, đánh giá/trích dẫn.    | ai_runs, ai_citations, feedback/eval records              | Ghi đè hoặc thay đổi dữ liệu nghiệp vụ.       |
+| Social                | Quản lý hồ sơ công khai, bài đăng, bình luận, tương tác, theo dõi.                    | author_profiles, posts, comments, reactions, follows      | Xác thực thông tin danh tính.                      |
+| Moderation            | Đánh giá chính sách và ra quyết định kiểm duyệt nội dung.                               | moderation_decisions, reports (nếu có)                  | Định nghĩa chính sách sản phẩm.                 |
+| Market Content        | Cập nhật giá thị trường, tin tức, và kiến thức rủi ro.                                   | observations, market updates, articles                    | Trạng thái sẵn sàng của căn hộ gốc.            |
+| Media                 | Quản lý vòng đời tải lên, metadata, quét/chuyển đổi file.                                | media_assets                                              | Quy tắc sở hữu tin đăng.                          |
+| Notifications         | Cấu hình, template, và lưu nhật ký gửi thông báo.                                          | notifications, delivery attempts                          | Quyết định phát sinh sự kiện nghiệp vụ.        |
+| Platform Jobs & Audit | Quản lý vòng đời job, outbox, và nhật ký kiểm toán.                                       | jobs, outbox_events, audit_logs                           | Logic xử lý nghiệp vụ của module khác.           |
 
 Quy tắc sở hữu: Module này không được phép cập nhật trực tiếp bảng cơ sở dữ liệu do module khác sở hữu. Trong monolith, các module giao tiếp thông qua service ứng dụng, public contract hoặc sự kiện nghiệp vụ (domain event). Tuyệt đối không import sâu vào chi tiết triển khai (implementation) của module khác.
 
@@ -234,15 +234,15 @@ Các giao dịch cụ thể sẽ phụ thuộc vào việc định nghĩa trạn
 
 ## 7. Đồng bộ và consistency
 
-| Dữ liệu | Mức consistency đề xuất | Cơ chế |
-|---|---|---|
-| Unit hold/booking | Nhất quán mạnh (Strong consistency) trong một database | Dùng Transaction, khóa dòng (row lock), ràng buộc (constraint), và idempotency. |
-| Lead creation | Nhất quán mạnh khi ghi; nhất quán cuối (eventual consistency) khi giao | Dùng Transaction + outbox. |
-| Saved/reaction/follow | Read-after-write (đọc ngay sau khi ghi) cho người tạo; đếm số lượng (counter) dùng nhất quán cuối | Ràng buộc duy nhất (Unique constraint) + gom nhóm bất đồng bộ (async aggregate) nếu cần. |
-| Feed/search index | Nhất quán cuối (Eventual consistency) | Outbox + worker. Dữ liệu gốc vẫn lưu ở Postgres. |
-| Partner inventory | Nhất quán cuối, phụ thuộc vào cam kết độ trễ (SLA) | Quan sát và đồng bộ (Observation/sync run) kết hợp chỉ báo dữ liệu cũ (stale indicator). |
-| Notification | Đảm bảo gửi ít nhất một lần (At-least-once delivery), bên nhận tự xử lý trùng lặp (idempotent) | Outbox/thử lại job (job retry) + khóa giao (delivery key). |
-| AI response | Phản hồi dạng chuỗi (Streaming best-effort), ghi log bền vững | Lưu trạng thái chạy và tin nhắn. Retry không làm nhân đôi tin nhắn. |
+| Dữ liệu             | Mức consistency đề xuất                                                                                     | Cơ chế                                                                                             |
+| --------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Unit hold/booking     | Nhất quán mạnh (Strong consistency) trong một database                                                      | Dùng Transaction, khóa dòng (row lock), ràng buộc (constraint), và idempotency.                |
+| Lead creation         | Nhất quán mạnh khi ghi; nhất quán cuối (eventual consistency) khi giao                                    | Dùng Transaction + outbox.                                                                          |
+| Saved/reaction/follow | Read-after-write (đọc ngay sau khi ghi) cho người tạo; đếm số lượng (counter) dùng nhất quán cuối | Ràng buộc duy nhất (Unique constraint) + gom nhóm bất đồng bộ (async aggregate) nếu cần.   |
+| Feed/search index     | Nhất quán cuối (Eventual consistency)                                                                        | Outbox + worker. Dữ liệu gốc vẫn lưu ở Postgres.                                               |
+| Partner inventory     | Nhất quán cuối, phụ thuộc vào cam kết độ trễ (SLA)                                                    | Quan sát và đồng bộ (Observation/sync run) kết hợp chỉ báo dữ liệu cũ (stale indicator). |
+| Notification          | Đảm bảo gửi ít nhất một lần (At-least-once delivery), bên nhận tự xử lý trùng lặp (idempotent)   | Outbox/thử lại job (job retry) + khóa giao (delivery key).                                        |
+| AI response           | Phản hồi dạng chuỗi (Streaming best-effort), ghi log bền vững                                             | Lưu trạng thái chạy và tin nhắn. Retry không làm nhân đôi tin nhắn.                      |
 
 Hệ thống không cam kết "exactly-once" (gửi đúng một lần) trong môi trường phân tán. Thiết kế sử dụng cơ chế "at-least-once" (gửi ít nhất một lần) kết hợp "idempotency" (xử lý an toàn khi gọi nhiều lần).
 
@@ -319,16 +319,16 @@ Các cam kết về chất lượng dịch vụ (SLO, RPO và RTO) hiện chưa 
 
 ## 12. Các phương án đã cân nhắc
 
-| Chủ đề | Phương án chọn (Proposed) | Phương án chưa chọn | Lý do hiện tại |
-|---|---|---|---|
-| Service topology | Modular monolith + worker | Microservices | Chưa xác định rõ tải trọng và ranh giới nhóm (team boundary). Quản lý giao dịch (transaction) booking sẽ đơn giản hơn trong monolith. |
-| Database | PostgreSQL | Polyglot DB (Nhiều loại DB khác nhau) từ đầu | Nghiệp vụ (domain) đòi hỏi tính quan hệ và giao dịch mạnh mẽ. |
-| Search | SQL filters + PostgreSQL FTS | Elasticsearch/OpenSearch ngay | Chưa có quy mô (scale) hoặc yêu cầu chất lượng đủ lớn để chứng minh nhu cầu. |
-| Semantic retrieval | Bật sau eval, có thể dùng pgvector | Dùng Vector DB riêng biệt ngay | Giảm bớt công sức vận hành và chi phí giai đoạn đầu. |
-| Queue | DB jobs + outbox | Kafka/SQS/PubSub ngay | Khối lượng công việc (Job volume) và mức độ lan tỏa (fan-out) chưa xác định. |
-| Cache | CDN/HTTP, không dùng Redis ban đầu | Dùng Redis làm mặc định | Tránh rắc rối khi xóa cache (invalidation) và việc có một nguồn sự thật (source of truth) thứ hai. |
-| API | REST + SSE | GraphQL/WebSocket | Phù hợp với nhu cầu cơ bản: CRUD (Tạo, Đọc, Sửa, Xóa), bộ lọc (filter) và chat một chiều (server đẩy dữ liệu). |
-| Model serving | Managed provider-neutral (Dùng dịch vụ ngoài) | Tự host trên GPU riêng (Self-host GPU) | Chưa có yêu cầu đủ khắt khe về quyền riêng tư (privacy), chi phí (cost) hoặc độ trễ (latency). |
+| Chủ đề          | Phương án chọn (Proposed)                     | Phương án chưa chọn                           | Lý do hiện tại                                                                                                                                       |
+| ------------------ | ------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Service topology   | Modular monolith + worker                         | Microservices                                      | Chưa xác định rõ tải trọng và ranh giới nhóm (team boundary). Quản lý giao dịch (transaction) booking sẽ đơn giản hơn trong monolith. |
+| Database           | PostgreSQL                                        | Polyglot DB (Nhiều loại DB khác nhau) từ đầu | Nghiệp vụ (domain) đòi hỏi tính quan hệ và giao dịch mạnh mẽ.                                                                                |
+| Search             | SQL filters + PostgreSQL FTS                      | Elasticsearch/OpenSearch ngay                      | Chưa có quy mô (scale) hoặc yêu cầu chất lượng đủ lớn để chứng minh nhu cầu.                                                            |
+| Semantic retrieval | Bật sau eval, có thể dùng pgvector            | Dùng Vector DB riêng biệt ngay                  | Giảm bớt công sức vận hành và chi phí giai đoạn đầu.                                                                                        |
+| Queue              | DB jobs + outbox                                  | Kafka/SQS/PubSub ngay                              | Khối lượng công việc (Job volume) và mức độ lan tỏa (fan-out) chưa xác định.                                                              |
+| Cache              | CDN/HTTP, không dùng Redis ban đầu            | Dùng Redis làm mặc định                       | Tránh rắc rối khi xóa cache (invalidation) và việc có một nguồn sự thật (source of truth) thứ hai.                                          |
+| API                | REST + SSE                                        | GraphQL/WebSocket                                  | Phù hợp với nhu cầu cơ bản: CRUD (Tạo, Đọc, Sửa, Xóa), bộ lọc (filter) và chat một chiều (server đẩy dữ liệu).                      |
+| Model serving      | Managed provider-neutral (Dùng dịch vụ ngoài) | Tự host trên GPU riêng (Self-host GPU)          | Chưa có yêu cầu đủ khắt khe về quyền riêng tư (privacy), chi phí (cost) hoặc độ trễ (latency).                                          |
 
 Các quyết định thiết kế chính được ghi nhận chi tiết tại [decisions.md](./decisions.md).
 

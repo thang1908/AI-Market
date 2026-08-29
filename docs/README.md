@@ -25,6 +25,7 @@
 | 7 | [infrastructure.md](./infrastructure.md) | Hạ tầng cloud, CI/CD, bảo mật, giám sát |
 | 8 | [decisions.md](./decisions.md) | 14 quyết định kiến trúc và lý do (ADR) |
 | 9 | [open-questions.md](./open-questions.md) | 54 câu hỏi cần trả lời trước khi code |
+| 10 | [sprint-plan.md](./sprint-plan.md) | Kế hoạch 16 sprint: MVP → Feature → Scale → Production |
 
 > **Lưu ý**: Tất cả tài liệu đang ở trạng thái **"Proposed — chờ review"**. Chưa có gì là quyết định cuối cùng.
 
