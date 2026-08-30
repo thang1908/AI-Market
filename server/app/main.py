@@ -66,7 +66,12 @@ def create_app() -> FastAPI:
             "database": "connected",
         }
 
-    # 3. Root redirect/info
+    # 3. Domain Routers
+    from app.modules.geography.transport.router import router as geography_router
+
+    app.include_router(geography_router, prefix=settings.API_V1_STR)
+
+    # 4. Root redirect/info
     @app.get(
         "/",
         tags=["System"],
@@ -78,6 +83,7 @@ def create_app() -> FastAPI:
             "version": settings.VERSION,
             "docs_url": "/docs",
             "health_url": "/health",
+            "api_prefix": settings.API_V1_STR,
         }
 
     return app

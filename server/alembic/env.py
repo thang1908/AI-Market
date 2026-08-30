@@ -13,6 +13,7 @@ from app.shared.database import Base
 
 # Import all models so Base.metadata knows about them
 from app.modules.identity.domain.models import User  # noqa: F401
+from app.modules.geography.domain.models import City, District  # noqa: F401
 
 config = context.config
 
