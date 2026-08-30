@@ -68,8 +68,10 @@ def create_app() -> FastAPI:
 
     # 3. Domain Routers
     from app.modules.geography.transport.router import router as geography_router
+    from app.modules.listings.transport.router import router as listings_router
 
     app.include_router(geography_router, prefix=settings.API_V1_STR)
+    app.include_router(listings_router, prefix=settings.API_V1_STR)
 
     # 4. Root redirect/info
     @app.get(
