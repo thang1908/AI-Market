@@ -1,8 +1,9 @@
-import React from 'react';
-import { X, RotateCcw, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, RotateCcw, Check, MapPin } from 'lucide-react';
 import { useAppState } from '../../state/useAppState';
-import { HANOI_DISTRICTS, PROPERTY_TYPES, SALE_PRICES, RENT_PRICES, AREA_RANGES, BEDROOM_OPTIONS } from './MarketFilters';
+import { PROPERTY_TYPES, SALE_PRICES, RENT_PRICES, AREA_RANGES, BEDROOM_OPTIONS } from './MarketFilters';
 import { PropertyType } from '../../types';
+import { geographyApi, City, District } from '../../api/geographyApi';
 
 interface AdvancedFiltersModalProps {
   isOpen: boolean;
@@ -12,16 +13,61 @@ interface AdvancedFiltersModalProps {
 export const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({ isOpen, onClose }) => {
   const { marketFilters, setMarketFilters, resetMarketFilters } = useAppState();
 
+  const [cities, setCities] = useState<City[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [isLoadingDistricts, setIsLoadingDistricts] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let isMounted = true;
+    const loadCities = async () => {
+      try {
+        const data = await geographyApi.getCities();
+        if (isMounted) setCities(data);
+      } catch (err) {
+        console.warn('Lỗi tải tỉnh thành trong Modal:', err);
+      }
+    };
+    loadCities();
+    return () => { isMounted = false; };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !marketFilters.cityId) return;
+    let isMounted = true;
+    const loadDistricts = async () => {
+      setIsLoadingDistricts(true);
+      try {
+        const data = await geographyApi.getDistrictsByCity(marketFilters.cityId);
+        if (isMounted) setDistricts(data);
+      } catch (err) {
+        console.warn('Lỗi tải quận huyện trong Modal:', err);
+      } finally {
+        if (isMounted) setIsLoadingDistricts(false);
+      }
+    };
+    loadDistricts();
+    return () => { isMounted = false; };
+  }, [isOpen, marketFilters.cityId]);
+
   if (!isOpen) return null;
 
-  const handleDistrictToggle = (district: string) => {
+  const handleCityChange = (cityId: string) => {
+    setMarketFilters(prev => ({
+      ...prev,
+      cityId: cityId,
+      districts: [], // Reset quận huyện khi đổi thành phố
+    }));
+  };
+
+  const handleDistrictToggle = (districtName: string) => {
     setMarketFilters(prev => {
-      const exists = prev.districts.includes(district);
+      const exists = prev.districts.includes(districtName);
       return {
         ...prev,
         districts: exists 
-          ? prev.districts.filter(d => d !== district)
-          : [...prev.districts, district]
+          ? prev.districts.filter(d => d !== districtName)
+          : [...prev.districts, districtName]
       };
     });
   };
@@ -39,6 +85,7 @@ export const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({ isOp
   };
 
   const activePrices = marketFilters.mode === 'sale' ? SALE_PRICES : RENT_PRICES;
+  const currentCityName = cities.find(c => c.id === marketFilters.cityId)?.name || 'Hà Nội';
 
   return (
     <div id="advanced-filters-backdrop" className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
@@ -64,11 +111,37 @@ export const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({ isOp
         {/* Filter Sections */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1">
           
-          {/* 1. Districts */}
+          {/* 1. Tỉnh / Thành phố */}
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">
+              Tỉnh / Thành phố
+            </label>
+            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+              {cities.slice(0, 12).map((c) => {
+                const selected = marketFilters.cityId === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => handleCityChange(c.id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                      selected
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                        : 'bg-slate-50 text-slate-700 border-slate-200/90 hover:bg-slate-100'
+                    }`}
+                  >
+                    <MapPin className={`w-3 h-3 ${selected ? 'text-white' : 'text-slate-400'}`} />
+                    <span>{c.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. Districts of selected city */}
           <div>
             <div className="flex items-center justify-between mb-2.5">
               <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Khu vực (Quận / Huyện)
+                Khu vực Quận / Huyện ({currentCityName})
               </label>
               {marketFilters.districts.length > 0 && (
                 <button
@@ -79,27 +152,31 @@ export const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({ isOp
                 </button>
               )}
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {HANOI_DISTRICTS.map((d) => {
-                const selected = marketFilters.districts.includes(d);
-                return (
-                  <button
-                    key={d}
-                    onClick={() => handleDistrictToggle(d)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                      selected
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                        : 'bg-slate-50 text-slate-700 border-slate-200/90 hover:bg-slate-100'
-                    }`}
-                  >
-                    {d}
-                  </button>
-                );
-              })}
-            </div>
+            {isLoadingDistricts ? (
+              <div className="py-4 text-center text-xs text-slate-400">Đang tải danh sách quận huyện...</div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+                {districts.map((d) => {
+                  const selected = marketFilters.districts.includes(d.name);
+                  return (
+                    <button
+                      key={d.id}
+                      onClick={() => handleDistrictToggle(d.name)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                        selected
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                          : 'bg-slate-50 text-slate-700 border-slate-200/90 hover:bg-slate-100'
+                      }`}
+                    >
+                      {d.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* 2. Property Types */}
+          {/* 3. Property Types */}
           <div>
             <div className="flex items-center justify-between mb-2.5">
               <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -134,7 +211,7 @@ export const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({ isOp
             </div>
           </div>
 
-          {/* 3. Price Range */}
+          {/* 4. Price Range */}
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">
               Mức giá {marketFilters.mode === 'sale' ? '(Bán)' : '(Thuê theo tháng)'}
@@ -159,7 +236,7 @@ export const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({ isOp
             </div>
           </div>
 
-          {/* 4. Area Range */}
+          {/* 5. Area Range */}
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">
               Diện tích sử dụng
@@ -184,7 +261,7 @@ export const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({ isOp
             </div>
           </div>
 
-          {/* 5. Bedrooms */}
+          {/* 6. Bedrooms */}
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">
               Số phòng ngủ
