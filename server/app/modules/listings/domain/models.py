@@ -20,6 +20,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.shared.database import Base, TimestampMixin
 
+# Import geography models để SQLAlchemy mapper nhận diện được City và District
+import app.modules.geography.domain.models  # noqa: F401
+
+
 
 class Listing(Base, TimestampMixin):
     """Model tin đăng bất động sản."""
