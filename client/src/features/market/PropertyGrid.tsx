@@ -123,7 +123,7 @@ export const PropertyGrid: React.FC<PropertyGridProps> = ({ listings, onOpenDeta
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
         <div>
           <h2 className="text-base sm:text-lg font-extrabold text-slate-900">
-            {sortedListings.length} BĐS đang {marketFilters.mode === 'sale' ? 'bán' : 'cho thuê'} tại {selectedCity}
+            {sortedListings.length} BĐS đang {marketFilters.mode === 'sale' ? 'bán' : 'cho thuê'} {marketFilters.cityId === 'HN' ? 'tại Hà Nội' : marketFilters.cityId === 'HCM' ? 'tại TP. Hồ Chí Minh' : marketFilters.cityId === 'DN' ? 'tại Đà Nẵng' : ''}
           </h2>
           <p className="text-xs text-slate-500">
             Hiển thị danh sách bất động sản khớp với các tiêu chí tìm kiếm

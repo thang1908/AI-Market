@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, SlidersHorizontal, Check, X, RotateCcw, MapPin, Search } from 'lucide-react';
 import { useAppState } from '../../state/useAppState';
 import { PropertyType } from '../../types';
@@ -123,13 +123,17 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
     setActiveDropdown(prev => (prev === name ? null : name));
   };
 
+  const closeDropdown = () => {
+    setActiveDropdown(null);
+  };
+
   const handleCitySelect = (city: City) => {
     setMarketFilters(prev => ({
       ...prev,
       cityId: city.id,
       districts: [], // Reset quận huyện khi đổi tỉnh thành
     }));
-    setActiveDropdown(null);
+    closeDropdown();
   };
 
   const handleDistrictToggle = (districtName: string) => {
@@ -158,17 +162,17 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
 
   const handleSelectPrice = (price: string) => {
     setMarketFilters(prev => ({ ...prev, priceRange: price }));
-    setActiveDropdown(null);
+    closeDropdown();
   };
 
   const handleSelectArea = (area: string) => {
     setMarketFilters(prev => ({ ...prev, areaRange: area }));
-    setActiveDropdown(null);
+    closeDropdown();
   };
 
   const handleSelectBedrooms = (pn: string) => {
     setMarketFilters(prev => ({ ...prev, bedrooms: pn }));
-    setActiveDropdown(null);
+    closeDropdown();
   };
 
   const activePriceList = marketFilters.mode === 'sale' ? SALE_PRICES : RENT_PRICES;
@@ -191,28 +195,40 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
     marketFilters.searchQuery.trim() !== '';
 
   return (
-    <div className="relative z-20 mb-6">
+    <div className="relative z-30 mb-6">
       
-      {/* Filter Buttons Horizontal Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+      {/* Click-away backdrop to close open dropdown cleanly */}
+      {activeDropdown && (
+        <div 
+          className="fixed inset-0 z-30 bg-transparent" 
+          onClick={closeDropdown} 
+        />
+      )}
+
+      {/* Filter Buttons Container */}
+      <div className="flex flex-wrap items-center gap-2">
         
         {/* 1. City / Province Selector Dropdown */}
         <div className="relative">
           <button
             id="filter-btn-city"
             onClick={() => toggleDropdown('city')}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap bg-blue-50/80 border-blue-200 text-blue-800 hover:bg-blue-100/80 shadow-xs"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap ${
+              activeDropdown === 'city'
+                ? 'bg-blue-100 border-blue-400 text-blue-900 shadow-sm'
+                : 'bg-blue-50/80 border-blue-200 text-blue-800 hover:bg-blue-100/80'
+            }`}
           >
             <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-            <span className="max-w-[100px] truncate">{currentCityName}</span>
+            <span className="max-w-[110px] truncate">{currentCityName}</span>
             <ChevronDown className="w-3.5 h-3.5 text-blue-500" />
           </button>
 
           {activeDropdown === 'city' && (
-            <div className="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-3 z-50 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-3 z-40 animate-in fade-in zoom-in-95 duration-100">
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
-                <span className="text-xs font-bold text-slate-900">Chọn Tỉnh / Thành phố</span>
-                <span className="text-[10px] font-semibold text-slate-400">{cities.length} tỉnh thành</span>
+                <span className="text-xs font-bold text-slate-900">Tỉnh / Thành phố</span>
+                <span className="text-[10px] font-semibold text-slate-400">{cities.length || 63} tỉnh thành</span>
               </div>
               
               {/* City Search Bar */}
@@ -224,6 +240,7 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
                   onChange={(e) => setCitySearch(e.target.value)}
                   placeholder="Tìm tỉnh thành..."
                   className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 focus:bg-white"
+                  autoFocus
                 />
               </div>
 
@@ -252,7 +269,7 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
           <button
             id="filter-btn-district"
             onClick={() => toggleDropdown('district')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap ${
               marketFilters.districts.length > 0
                 ? 'bg-blue-50 border-blue-300 text-blue-700'
                 : 'bg-white border-slate-200/90 text-slate-700 hover:border-slate-300'
@@ -265,7 +282,7 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
           </button>
 
           {activeDropdown === 'district' && (
-            <div className="absolute left-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-3 z-50 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute left-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-3 z-40 animate-in fade-in zoom-in-95 duration-100">
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
                 <span className="text-xs font-bold text-slate-900">Quận / Huyện ({currentCityName})</span>
                 {marketFilters.districts.length > 0 && (
@@ -288,6 +305,7 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
                     onChange={(e) => setDistrictSearch(e.target.value)}
                     placeholder="Tìm quận / huyện..."
                     className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 focus:bg-white"
+                    autoFocus
                   />
                 </div>
               )}
@@ -323,7 +341,7 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
           <button
             id="filter-btn-property-type"
             onClick={() => toggleDropdown('type')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap ${
               marketFilters.propertyTypes.length > 0
                 ? 'bg-blue-50 border-blue-300 text-blue-700'
                 : 'bg-white border-slate-200/90 text-slate-700 hover:border-slate-300'
@@ -336,7 +354,7 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
           </button>
 
           {activeDropdown === 'type' && (
-            <div className="absolute left-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-3 z-50 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute left-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-3 z-40 animate-in fade-in zoom-in-95 duration-100">
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
                 <span className="text-xs font-bold text-slate-900">Loại hình BĐS</span>
                 {marketFilters.propertyTypes.length > 0 && (
@@ -373,7 +391,7 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
           <button
             id="filter-btn-price"
             onClick={() => toggleDropdown('price')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap ${
               marketFilters.priceRange !== 'Tất cả'
                 ? 'bg-blue-50 border-blue-300 text-blue-700'
                 : 'bg-white border-slate-200/90 text-slate-700 hover:border-slate-300'
@@ -386,7 +404,7 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
           </button>
 
           {activeDropdown === 'price' && (
-            <div className="absolute left-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute left-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-2 z-40 animate-in fade-in zoom-in-95 duration-100">
               <div className="space-y-0.5">
                 {activePriceList.map((p) => (
                   <button
@@ -412,7 +430,7 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
           <button
             id="filter-btn-area"
             onClick={() => toggleDropdown('area')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap ${
               marketFilters.areaRange !== 'Tất cả'
                 ? 'bg-blue-50 border-blue-300 text-blue-700'
                 : 'bg-white border-slate-200/90 text-slate-700 hover:border-slate-300'
@@ -425,7 +443,7 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
           </button>
 
           {activeDropdown === 'area' && (
-            <div className="absolute left-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute left-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-2 z-40 animate-in fade-in zoom-in-95 duration-100">
               <div className="space-y-0.5">
                 {AREA_RANGES.map((a) => (
                   <button
@@ -451,7 +469,7 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
           <button
             id="filter-btn-bedrooms"
             onClick={() => toggleDropdown('bedrooms')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap ${
               marketFilters.bedrooms !== 'Tất cả'
                 ? 'bg-blue-50 border-blue-300 text-blue-700'
                 : 'bg-white border-slate-200/90 text-slate-700 hover:border-slate-300'
@@ -464,7 +482,7 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
           </button>
 
           {activeDropdown === 'bedrooms' && (
-            <div className="absolute left-0 mt-2 w-44 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute left-0 mt-2 w-44 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-2 z-40 animate-in fade-in zoom-in-95 duration-100">
               <div className="space-y-0.5">
                 {BEDROOM_OPTIONS.map((pn) => (
                   <button
@@ -489,7 +507,7 @@ export const MarketFilters: React.FC<MarketFiltersProps> = ({ onOpenAdvancedModa
         <button
           id="filter-btn-advanced"
           onClick={onOpenAdvancedModal}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white border border-slate-200/90 text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-all whitespace-nowrap"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-white border border-slate-200/90 text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-all whitespace-nowrap"
         >
           <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
           <span>Bộ lọc khác</span>
