@@ -324,6 +324,7 @@ export interface RiskItem {
 export interface MarketFilterState {
   searchQuery: string;
   mode: ListingMode;
+  cityId: string;
   districts: string[];
   propertyTypes: string[];
   priceRange: string;

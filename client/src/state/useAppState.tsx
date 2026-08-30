@@ -309,6 +309,7 @@ interface AppContextType {
 const initialFilters: MarketFilterState = {
   searchQuery: '',
   mode: 'sale',
+  cityId: 'HN',
   districts: [],
   propertyTypes: [],
   priceRange: 'Tất cả',
