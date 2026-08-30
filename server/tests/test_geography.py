@@ -28,31 +28,41 @@ async def test_geography_endpoints_with_sqlite_mock():
     app.dependency_overrides[get_db] = override_get_db
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        # Test 1: GET /api/v1/geography/cities
+        # Test 1: GET /api/v1/geography/cities (63 provinces)
         response = await ac.get("/api/v1/geography/cities")
         assert response.status_code == 200
         cities = response.json()
-        assert len(cities) >= 2
+        assert len(cities) == 63
         city_ids = [c["id"] for c in cities]
         assert "HN" in city_ids
         assert "HCM" in city_ids
+        assert "DN" in city_ids
+        assert "BD" in city_ids
+        # Priority check
+        assert cities[0]["id"] == "HN"
+        assert cities[1]["id"] == "HCM"
+        assert cities[2]["id"] == "DN"
 
-        # Test 2: GET /api/v1/geography/cities/HN/districts
+        # Test 2: GET /api/v1/geography/cities/HN/districts (30 districts)
         response = await ac.get("/api/v1/geography/cities/HN/districts")
         assert response.status_code == 200
-        districts = response.json()
-        assert len(districts) == 30
-        assert districts[0]["name"] == "Tây Hồ"
-        assert districts[1]["name"] == "Cầu Giấy"
+        hn_districts = response.json()
+        assert len(hn_districts) == 30
 
-        # Test 3: GET /api/v1/geography/cities/HN (Detail with nested districts)
+        # Test 3: GET /api/v1/geography/cities/HCM/districts (22 districts)
+        response = await ac.get("/api/v1/geography/cities/HCM/districts")
+        assert response.status_code == 200
+        hcm_districts = response.json()
+        assert len(hcm_districts) == 22
+
+        # Test 4: GET /api/v1/geography/cities/HN (Detail with nested districts)
         response = await ac.get("/api/v1/geography/cities/HN")
         assert response.status_code == 200
         hn_detail = response.json()
         assert hn_detail["name"] == "Hà Nội"
         assert len(hn_detail["districts"]) == 30
 
-        # Test 4: GET /api/v1/geography/cities/NON_EXISTENT/districts -> 404
+        # Test 5: GET /api/v1/geography/cities/NON_EXISTENT/districts -> 404
         response = await ac.get("/api/v1/geography/cities/INVALID_CITY/districts")
         assert response.status_code == 404
 
