@@ -48,7 +48,18 @@ def create_app() -> FastAPI:
         status_code=status.HTTP_200_OK,
     )
     async def readiness_check():
-        # Sẵn sàng nhận traffic (khi có DB connection sẽ bổ sung ping DB tại đây)
+        from app.shared.database import check_database_connection
+
+        db_ok = await check_database_connection()
+        if not db_ok:
+            return JSONResponse(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                content={
+                    "status": "not_ready",
+                    "environment": settings.ENV,
+                    "database": "disconnected",
+                },
+            )
         return {
             "status": "ready",
             "environment": settings.ENV,
