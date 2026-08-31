@@ -22,13 +22,23 @@ const ProjectCardSkeleton: React.FC = () => (
 );
 
 export const ProjectView: React.FC = () => {
-  const { activeMarketCity } = useAppState() as any;
+  const { activeMarketCity, projectFilters } = useAppState() as any;
 
   // Lấy cityId từ state nếu có, mặc định HN
   const cityId = activeMarketCity || 'HN';
 
+  // Chuyển đổi projectFilters sang query params
+  const districtId = projectFilters?.districts?.length > 0 ? projectFilters.districts[0] : undefined;
+  const status = projectFilters?.status && projectFilters.status !== 'Tất cả' ? projectFilters.status : undefined;
+  const search = projectFilters?.searchQuery || (projectFilters?.developer && projectFilters.developer !== 'Tất cả' ? projectFilters.developer : undefined);
+  const propertyType = projectFilters?.propertyTypes?.length > 0 ? projectFilters.propertyTypes.join(',') : undefined;
+
   const { projects, total, isLoading, error, refetch } = useProjects({
     cityId,
+    districtId,
+    status,
+    search,
+    propertyType,
     pageSize: 20,
   });
 

@@ -70,12 +70,16 @@ export function useListings(
           price_per_m2_asc: 'price_per_m2_asc',
         };
 
+        // District IDs / Names
+        const districtIdsParam =
+          filters.districts && filters.districts.length > 0
+            ? filters.districts.join(',')
+            : undefined;
+
         const data = await listingsApi.getListings({
           mode: filters.mode,
           city_id: filters.cityId || undefined,
-          // district_ids từ district names → cần so khớp với API
-          // districts trong marketFilters là tên quận (string[])
-          // API nhận district_ids (ID). Hiện tại skip, sẽ refine ở Task 2.6
+          district_ids: districtIdsParam,
           property_types: propertyTypesParam,
           min_price,
           max_price,

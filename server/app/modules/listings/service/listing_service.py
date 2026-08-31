@@ -47,9 +47,20 @@ class ListingService:
         if city_id:
             query = query.where(Listing.city_id == city_id)
 
-        # ── Lọc theo nhiều quận/huyện ──
+        # ── Lọc theo nhiều quận/huyện (Hỗ trợ cả ID 'HN_005', tên đầy đủ 'Quận Cầu Giấy', 'Huyện Gia Lâm' hoặc tên ngắn 'Cầu Giấy') ──
         if district_ids:
-            query = query.where(Listing.district_id.in_(district_ids))
+            from app.modules.geography.domain.models import District
+            name_conditions = []
+            for d in district_ids:
+                d_clean = d.strip()
+                if not d_clean:
+                    continue
+                name_conditions.append(District.id == d_clean)
+                name_conditions.append(District.name.ilike(f"%{d_clean}%"))
+
+            if name_conditions:
+                matching_districts_subquery = select(District.id).where(or_(*name_conditions))
+                query = query.where(Listing.district_id.in_(matching_districts_subquery))
 
         # ── Lọc theo loại hình BĐS ──
         if property_types:

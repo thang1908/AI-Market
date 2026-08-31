@@ -34,7 +34,16 @@ class ProjectService:
         if city_id:
             conditions.append(Project.city_id == city_id)
         if district_id:
-            conditions.append(Project.district_id == district_id)
+            from app.modules.geography.domain.models import District
+            d_clean = district_id.strip()
+            if d_clean:
+                matching_districts_subquery = select(District.id).where(
+                    or_(
+                        District.id == d_clean,
+                        District.name.ilike(f"%{d_clean}%"),
+                    )
+                )
+                conditions.append(Project.district_id.in_(matching_districts_subquery))
         if property_type:
             types = [t.strip() for t in property_type.split(",")]
             conditions.append(Project.property_type.in_(types))
