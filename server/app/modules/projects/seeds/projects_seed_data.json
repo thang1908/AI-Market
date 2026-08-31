@@ -1,0 +1,467 @@
+[
+  {
+    "id": "PROJ-LUMI-HN",
+    "name": "Lumi Hanoi",
+    "developer": "CapitaLand Development Vietnam",
+    "description": "Tuyệt tác căn hộ chuẩn quốc tế của CapitaLand tại phía Tây Hà Nội. Thiết kế lấy cảm hứng từ 'thành phố ánh sáng' với hơn 80 tiện ích cao cấp, công viên nội khu 5ha và cầu đi bộ trên không độc bản dài 200m.",
+    "property_type": "Căn hộ",
+    "status": "Đang mở bán",
+    "badge": "Hot",
+    "price_from": 5500000000,
+    "price_per_m2_from": 85000000,
+    "price_per_m2_to": 115000000,
+    "available_units_count": 126,
+    "address": "Đại lộ Thăng Long, Tây Mỗ, Nam Từ Liêm, Hà Nội",
+    "city_id": "HN",
+    "district_id": "HN_019",
+    "latitude": 21.0025,
+    "longitude": 105.7412,
+    "cover_image": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80",
+    "gallery": [
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80",
+      "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80",
+      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80",
+      "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80",
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80"
+    ],
+    "overview": {
+      "scale": "9 tòa tháp cao 29–35 tầng",
+      "land_area": "5,6 ha",
+      "density": "28,5%",
+      "total_units": "3.950 căn hộ",
+      "handover_date": "Quý 4/2026",
+      "construction_progress": "Đang thi công phần thân tầng 18"
+    },
+    "legal": {
+      "ownership_type": "Sổ đỏ lâu dài",
+      "permit_number": "24/GPXD-SXD-HN",
+      "notes": "Đã đủ điều kiện bán nhà ở hình thành trong tương lai, bảo lãnh Vietcombank"
+    },
+    "amenities": ["Hồ bơi vô cực 50m", "Gym 360°", "Công viên 5ha", "Canopy Walk 200m", "Khu BBQ ngoài trời", "Kid Paradise", "Trạm sạc xe điện"],
+    "contact": {"name": "Hotline CapitaLand", "phone": "1800 400 088", "email": "sales.lumi@capitaland.com.vn"},
+    "is_featured": true,
+    "units": [
+      {"unit_code": "L1-08-01", "block": "Lumi 1", "floor": 8,  "area": 53.8, "bedrooms": 2, "bathrooms": 2, "direction": "Đông Nam", "view": "Nội khu",    "price": 5500000000, "status": "available"},
+      {"unit_code": "L1-12-02", "block": "Lumi 1", "floor": 12, "area": 74.5, "bedrooms": 2, "bathrooms": 2, "direction": "Tây Nam",  "view": "Thành phố",  "price": 6800000000, "status": "available"},
+      {"unit_code": "L1-15-03", "block": "Lumi 1", "floor": 15, "area": 86.0, "bedrooms": 3, "bathrooms": 2, "direction": "Đông",     "view": "Đại lộ",    "price": 8200000000, "status": "deposited"},
+      {"unit_code": "L2-10-01", "block": "Lumi 2", "floor": 10, "area": 53.8, "bedrooms": 2, "bathrooms": 2, "direction": "Nam",      "view": "Hồ bơi",    "price": 5700000000, "status": "available"},
+      {"unit_code": "L2-18-04", "block": "Lumi 2", "floor": 18, "area": 117.8,"bedrooms": 3, "bathrooms": 3, "direction": "Đông Nam", "view": "Panorama",  "price": 12000000000,"status": "sold"},
+      {"unit_code": "L3-20-01", "block": "Lumi 3", "floor": 20, "area": 42.2, "bedrooms": 1, "bathrooms": 1, "direction": "Đông",     "view": "Thành phố", "price": 4200000000, "status": "available"},
+      {"unit_code": "L3-25-02", "block": "Lumi 3", "floor": 25, "area": 68.5, "bedrooms": 2, "bathrooms": 2, "direction": "Tây Bắc", "view": "Sông Nhuệ", "price": 6500000000, "status": "available"},
+      {"unit_code": "L1-28-PH", "block": "Lumi 1", "floor": 28, "area": 193.0,"bedrooms": 4, "bathrooms": 4, "direction": "Đông Nam", "view": "Toàn cảnh", "price": 28000000000,"status": "deposited"}
+    ]
+  },
+  {
+    "id": "PROJ-MATRIX-HN",
+    "name": "The Matrix One",
+    "developer": "MIK Group",
+    "description": "Biểu tượng kiến trúc hiện đại bậc nhất tại Mỹ Đình, The Matrix One mang lại chuẩn sống Smart Home tích hợp công nghệ AI đầu tiên tại Hà Nội với view toàn cảnh hồ và công viên Hòa Bình.",
+    "property_type": "Căn hộ",
+    "status": "Đang mở bán",
+    "badge": "Mới",
+    "price_from": 6200000000,
+    "price_per_m2_from": 78000000,
+    "price_per_m2_to": 120000000,
+    "available_units_count": 84,
+    "address": "Đường Lê Quang Đạo, Mỹ Đình 1, Nam Từ Liêm, Hà Nội",
+    "city_id": "HN",
+    "district_id": "HN_019",
+    "latitude": 21.0211,
+    "longitude": 105.7788,
+    "cover_image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&q=80",
+    "gallery": [
+      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&q=80",
+      "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80",
+      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80",
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80"
+    ],
+    "overview": {
+      "scale": "2 tòa tháp cao 38 tầng",
+      "land_area": "1,98 ha",
+      "density": "35%",
+      "total_units": "820 căn hộ",
+      "handover_date": "Quý 2/2026",
+      "construction_progress": "Đã cất nóc, đang hoàn thiện nội thất"
+    },
+    "legal": {
+      "ownership_type": "Sổ hồng lâu dài",
+      "permit_number": "58/GPXD-HN",
+      "notes": "Bảo lãnh MB Bank, đủ điều kiện mở bán"
+    },
+    "amenities": ["Hồ bơi tràn bờ", "Gym & Yoga studio", "Rooftop Sky Garden", "Smart Home AI", "Concierge 24/7", "Phòng họp cư dân"],
+    "contact": {"name": "MIK Group Sales", "phone": "0899 188 998", "email": "sales@mikgroup.vn"},
+    "is_featured": true,
+    "units": [
+      {"unit_code": "M1-10-01", "block": "M1", "floor": 10, "area": 70.2, "bedrooms": 2, "bathrooms": 2, "direction": "Đông Nam", "view": "Hồ",         "price": 6200000000,  "status": "available"},
+      {"unit_code": "M1-15-02", "block": "M1", "floor": 15, "area": 95.5, "bedrooms": 3, "bathrooms": 2, "direction": "Nam",      "view": "Công viên", "price": 8800000000,  "status": "available"},
+      {"unit_code": "M2-20-01", "block": "M2", "floor": 20, "area": 70.2, "bedrooms": 2, "bathrooms": 2, "direction": "Đông",     "view": "Thành phố", "price": 6500000000,  "status": "deposited"},
+      {"unit_code": "M2-30-01", "block": "M2", "floor": 30, "area": 115.0,"bedrooms": 3, "bathrooms": 3, "direction": "Tây Nam", "view": "Panorama",  "price": 11500000000, "status": "available"},
+      {"unit_code": "M1-38-PH", "block": "M1", "floor": 38, "area": 210.0,"bedrooms": 4, "bathrooms": 4, "direction": "Đông Nam", "view": "Toàn cảnh","price": 32000000000, "status": "sold"}
+    ]
+  },
+  {
+    "id": "PROJ-HERITAGE-HN",
+    "name": "Heritage West Lake",
+    "developer": "Hesco & An Lạc",
+    "description": "Dự án căn hộ cao cấp ven Hồ Tây huyền thoại, Heritage West Lake sở hữu view hồ độc quyền 180 độ và phong cách kiến trúc Đông Dương tinh tế. Vị trí trung tâm quận Tây Hồ, chỉ 5 phút đến trung tâm Hà Nội.",
+    "property_type": "Căn hộ",
+    "status": "Đang mở bán",
+    "badge": "Hot",
+    "price_from": 9800000000,
+    "price_per_m2_from": 110000000,
+    "price_per_m2_to": 160000000,
+    "available_units_count": 45,
+    "address": "Đường Xuân Diệu, Tây Hồ, Hà Nội",
+    "city_id": "HN",
+    "district_id": "HN_003",
+    "latitude": 21.0814,
+    "longitude": 105.8262,
+    "cover_image": "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1200&q=80",
+    "gallery": [
+      "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1200&q=80",
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80",
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80",
+      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1200&q=80"
+    ],
+    "overview": {
+      "scale": "2 tòa tháp cao 26 tầng",
+      "land_area": "0,85 ha",
+      "density": "32%",
+      "total_units": "348 căn hộ hạng sang",
+      "handover_date": "Quý 3/2025",
+      "construction_progress": "Hoàn thiện 95%, chuẩn bị bàn giao"
+    },
+    "legal": {
+      "ownership_type": "Sổ đỏ lâu dài",
+      "permit_number": "112/GPXD-TX-HN",
+      "notes": "Pháp lý hoàn chỉnh, sổ đỏ từng căn"
+    },
+    "amenities": ["View Hồ Tây 180°", "Hồ bơi phong cách resort", "Spa & Beauty center", "Nhà hàng rooftop", "Private cinema", "Butler service"],
+    "contact": {"name": "Heritage Sales Gallery", "phone": "0243 789 6688", "email": "info@heritagehanoivillas.vn"},
+    "is_featured": true,
+    "units": [
+      {"unit_code": "HWL-A-08-01", "block": "A", "floor": 8,  "area": 88.5, "bedrooms": 2, "bathrooms": 2, "direction": "Đông",     "view": "Hồ Tây",   "price": 10200000000, "status": "sold"},
+      {"unit_code": "HWL-A-12-02", "block": "A", "floor": 12, "area": 105.0,"bedrooms": 3, "bathrooms": 2, "direction": "Đông Nam", "view": "Hồ Tây",   "price": 13500000000, "status": "available"},
+      {"unit_code": "HWL-B-15-01", "block": "B", "floor": 15, "area": 88.5, "bedrooms": 2, "bathrooms": 2, "direction": "Tây",      "view": "Thành phố","price": 9800000000,  "status": "available"},
+      {"unit_code": "HWL-A-20-PH", "block": "A", "floor": 20, "area": 230.0,"bedrooms": 4, "bathrooms": 4, "direction": "Đông Nam", "view": "Toàn hồ",  "price": 45000000000, "status": "deposited"}
+    ]
+  },
+  {
+    "id": "PROJ-MASTERI-WH",
+    "name": "Masteri West Heights",
+    "developer": "Masterise Homes",
+    "description": "Masteri West Heights là dự án hạng sang đầu tiên trong hệ sinh thái Smart City tại phía Tây Hà Nội. Tích hợp hệ thống quản lý thông minh, kết nối trực tiếp Vinhomes Smart City và hàng trăm tiện ích đẳng cấp quốc tế.",
+    "property_type": "Căn hộ",
+    "status": "Sắp mở bán",
+    "badge": "Sắp ra mắt",
+    "price_from": 7500000000,
+    "price_per_m2_from": 95000000,
+    "price_per_m2_to": 140000000,
+    "available_units_count": 200,
+    "address": "Vinhomes Smart City, Tây Mỗ, Nam Từ Liêm, Hà Nội",
+    "city_id": "HN",
+    "district_id": "HN_019",
+    "latitude": 21.0055,
+    "longitude": 105.7580,
+    "cover_image": "https://images.unsplash.com/photo-1549517045-bc93de075e53?w=1200&q=80",
+    "gallery": [
+      "https://images.unsplash.com/photo-1549517045-bc93de075e53?w=1200&q=80",
+      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80",
+      "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80"
+    ],
+    "overview": {
+      "scale": "3 tòa tháp cao 40 tầng",
+      "land_area": "2,3 ha",
+      "density": "30%",
+      "total_units": "1.200 căn hộ",
+      "handover_date": "Quý 1/2027",
+      "construction_progress": "Đang thi công phần móng"
+    },
+    "legal": {
+      "ownership_type": "Sổ hồng lâu dài",
+      "permit_number": "Đang hoàn thiện",
+      "notes": "Dự kiến đủ điều kiện mở bán Q1/2025"
+    },
+    "amenities": ["Sky Pool 40F", "Gym & Tennis court", "Smart Home system", "Shophouse tầng 1-3", "Trường mầm non nội khu", "Công viên 3ha"],
+    "contact": {"name": "Masterise Homes HN", "phone": "1900 6868", "email": "westheights@masterisehomes.com"},
+    "is_featured": false,
+    "units": [
+      {"unit_code": "WH-S1-10-01", "block": "S1", "floor": 10, "area": 68.0, "bedrooms": 2, "bathrooms": 2, "direction": "Đông Nam", "view": "Smart City", "price": 7500000000,  "status": "available"},
+      {"unit_code": "WH-S2-20-01", "block": "S2", "floor": 20, "area": 92.0, "bedrooms": 3, "bathrooms": 2, "direction": "Nam",      "view": "Công viên",  "price": 10200000000, "status": "available"},
+      {"unit_code": "WH-S3-35-01", "block": "S3", "floor": 35, "area": 120.0,"bedrooms": 3, "bathrooms": 3, "direction": "Tây Nam", "view": "Panorama",    "price": 14500000000, "status": "available"}
+    ]
+  },
+  {
+    "id": "PROJ-LUMIERE-HN",
+    "name": "Lumière Evergreen",
+    "developer": "Masterise Homes",
+    "description": "Lumière Evergreen – nơi thiên nhiên và đô thị hòa quyện tại Gia Lâm. Dự án mang phong cách kiến trúc xanh bền vững, tọa lạc ngay cạnh Vinhomes Ocean Park với view sông Hồng hùng vĩ.",
+    "property_type": "Căn hộ",
+    "status": "Đang mở bán",
+    "badge": "Xanh",
+    "price_from": 4800000000,
+    "price_per_m2_from": 58000000,
+    "price_per_m2_to": 85000000,
+    "available_units_count": 155,
+    "address": "Đường Nguyễn Văn Linh, Đa Tốn, Gia Lâm, Hà Nội",
+    "city_id": "HN",
+    "district_id": "HN_018",
+    "latitude": 20.9812,
+    "longitude": 105.9154,
+    "cover_image": "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=80",
+    "gallery": [
+      "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=80",
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80",
+      "https://images.unsplash.com/photo-1543628890-7d8b79f44c5a?w=1200&q=80"
+    ],
+    "overview": {
+      "scale": "4 tòa tháp cao 25 tầng",
+      "land_area": "3,1 ha",
+      "density": "25%",
+      "total_units": "1.560 căn hộ",
+      "handover_date": "Quý 2/2026",
+      "construction_progress": "Đang xây thô tầng 15"
+    },
+    "legal": {
+      "ownership_type": "Sổ hồng 50 năm",
+      "permit_number": "87/GPXD-GL",
+      "notes": "Đủ điều kiện mở bán, bảo lãnh Techcombank"
+    },
+    "amenities": ["Công viên xanh 4ha", "Hồ bơi ngoài trời", "Gym", "Trung tâm thương mại Vincom", "Trường học liên cấp", "Bệnh viện Vinmec"],
+    "contact": {"name": "Masterise Gia Lâm", "phone": "0901 168 868", "email": "evergreen@masterisehomes.com"},
+    "is_featured": false,
+    "units": [
+      {"unit_code": "EG-A-05-01", "block": "A", "floor": 5,  "area": 60.5, "bedrooms": 2, "bathrooms": 2, "direction": "Đông",     "view": "Công viên", "price": 4800000000, "status": "available"},
+      {"unit_code": "EG-B-10-02", "block": "B", "floor": 10, "area": 82.0, "bedrooms": 3, "bathrooms": 2, "direction": "Nam",      "view": "Sông Hồng", "price": 6200000000, "status": "available"},
+      {"unit_code": "EG-C-15-01", "block": "C", "floor": 15, "area": 60.5, "bedrooms": 2, "bathrooms": 2, "direction": "Tây Nam", "view": "Nội khu",   "price": 5100000000, "status": "sold"},
+      {"unit_code": "EG-D-20-01", "block": "D", "floor": 20, "area": 103.0,"bedrooms": 3, "bathrooms": 3, "direction": "Đông Nam", "view": "Panorama", "price": 8500000000, "status": "deposited"}
+    ]
+  },
+  {
+    "id": "PROJ-OCEAN2-HN",
+    "name": "Vinhomes Ocean Park 2 – The Empire",
+    "developer": "Vinhomes",
+    "description": "Đại đô thị biển hồ thứ hai của Vinhomes tại Gia Lâm với quy mô 294ha, tích hợp công nghệ nước biển nhân tạo độc đáo, 5 phân khu đẳng cấp quốc tế và hệ sinh thái tiện ích khổng lồ.",
+    "property_type": "Tổ hợp",
+    "status": "Đang mở bán",
+    "badge": "Hot",
+    "price_from": 3200000000,
+    "price_per_m2_from": 42000000,
+    "price_per_m2_to": 95000000,
+    "available_units_count": 420,
+    "address": "Đường Vành đai 3.5, Đa Tốn, Gia Lâm, Hà Nội",
+    "city_id": "HN",
+    "district_id": "HN_018",
+    "latitude": 20.9650,
+    "longitude": 105.9280,
+    "cover_image": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80",
+    "gallery": [
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80",
+      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80",
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80",
+      "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=80"
+    ],
+    "overview": {
+      "scale": "294ha, 5 phân khu đa dạng",
+      "land_area": "294 ha",
+      "density": "20%",
+      "total_units": "12.000+ sản phẩm",
+      "handover_date": "Nhiều đợt 2025–2027",
+      "construction_progress": "Đang triển khai đa dạng phân khu"
+    },
+    "legal": {
+      "ownership_type": "Sổ đỏ lâu dài",
+      "permit_number": "Nhiều GPXD theo phân khu",
+      "notes": "Bảo lãnh Vietcombank, thủ tục hoàn chỉnh"
+    },
+    "amenities": ["Biển hồ nhân tạo nước mặn", "Công viên Safari", "Trung tâm thương mại Vincom", "Vinschool & Vinuni", "Vinmec Ocean Park", "Sân Golf"],
+    "contact": {"name": "Vinhomes Ocean Park 2", "phone": "1900 9999", "email": "op2@vinhomes.vn"},
+    "is_featured": true,
+    "units": [
+      {"unit_code": "OP2-E-05-01", "block": "Empire", "floor": 5,  "area": 52.0, "bedrooms": 2, "bathrooms": 2, "direction": "Đông",     "view": "Biển hồ", "price": 3200000000, "status": "available"},
+      {"unit_code": "OP2-E-12-02", "block": "Empire", "floor": 12, "area": 75.0, "bedrooms": 3, "bathrooms": 2, "direction": "Nam",      "view": "Biển hồ", "price": 4800000000, "status": "available"},
+      {"unit_code": "OP2-S-08-01", "block": "Sapphire","floor": 8,  "area": 65.0, "bedrooms": 2, "bathrooms": 2, "direction": "Tây Nam", "view": "Vườn",   "price": 3800000000, "status": "deposited"},
+      {"unit_code": "OP2-G-15-01", "block": "Gold",   "floor": 15, "area": 92.0, "bedrooms": 3, "bathrooms": 3, "direction": "Đông Nam", "view": "Safari", "price": 6200000000, "status": "available"}
+    ]
+  },
+  {
+    "id": "PROJ-MASTERI-CP",
+    "name": "Masteri Centre Point",
+    "developer": "Masterise Homes",
+    "description": "Masteri Centre Point tọa lạc tại trung tâm quận 9 (TP. Thủ Đức), kết nối trực tiếp Metro số 1, cạnh Vinhomes Grand Park. Là căn hộ chuẩn quốc tế đích thực với thiết kế Singapore phong cách.",
+    "property_type": "Căn hộ",
+    "status": "Đang mở bán",
+    "badge": "Hot",
+    "price_from": 3800000000,
+    "price_per_m2_from": 55000000,
+    "price_per_m2_to": 80000000,
+    "available_units_count": 98,
+    "address": "Đường Nguyễn Xiển, Long Bình, Thủ Đức, TP. Hồ Chí Minh",
+    "city_id": "HCM",
+    "district_id": "HCM_769",
+    "latitude": 10.8411,
+    "longitude": 106.8270,
+    "cover_image": "https://images.unsplash.com/photo-1473177104440-ffee2f376098?w=1200&q=80",
+    "gallery": [
+      "https://images.unsplash.com/photo-1473177104440-ffee2f376098?w=1200&q=80",
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80",
+      "https://images.unsplash.com/photo-1549517045-bc93de075e53?w=1200&q=80"
+    ],
+    "overview": {
+      "scale": "3 tòa tháp cao 42 tầng",
+      "land_area": "2,6 ha",
+      "density": "28%",
+      "total_units": "1.800 căn hộ",
+      "handover_date": "Quý 4/2025",
+      "construction_progress": "Cất nóc, đang hoàn thiện"
+    },
+    "legal": {
+      "ownership_type": "Sổ hồng lâu dài",
+      "permit_number": "15/GPXD-Q9-HCM",
+      "notes": "Pháp lý hoàn chỉnh, đủ điều kiện mở bán"
+    },
+    "amenities": ["Sky Pool 42F", "Gym & Spa", "Clubhouse", "Kết nối Metro số 1", "Shophouse 5 tầng", "Công viên 2ha"],
+    "contact": {"name": "Masterise HCM", "phone": "1900 6868", "email": "centrepoint@masterisehomes.com"},
+    "is_featured": true,
+    "units": [
+      {"unit_code": "CP-A-10-01", "block": "A", "floor": 10, "area": 65.0, "bedrooms": 2, "bathrooms": 2, "direction": "Đông Nam", "view": "Grand Park", "price": 3800000000, "status": "available"},
+      {"unit_code": "CP-B-20-02", "block": "B", "floor": 20, "area": 88.5, "bedrooms": 3, "bathrooms": 2, "direction": "Tây Nam",  "view": "Thành phố", "price": 5600000000, "status": "available"},
+      {"unit_code": "CP-C-35-01", "block": "C", "floor": 35, "area": 110.0,"bedrooms": 3, "bathrooms": 3, "direction": "Nam",      "view": "Panorama",  "price": 7800000000, "status": "sold"},
+      {"unit_code": "CP-A-42-PH", "block": "A", "floor": 42, "area": 180.0,"bedrooms": 4, "bathrooms": 4, "direction": "Đông Nam", "view": "Toàn cảnh","price": 22000000000,"status": "deposited"}
+    ]
+  },
+  {
+    "id": "PROJ-THE-GLOBAL-DN",
+    "name": "The Global City Đà Nẵng",
+    "developer": "Masterise Homes",
+    "description": "Khu đô thị quốc tế 117ha đầu tiên tại Đà Nẵng, The Global City mang tầm vóc một 'thành phố trong thành phố' với hệ sinh thái tiện ích hoàn chỉnh, view sông Hàn và biển Đà Nẵng.",
+    "property_type": "Tổ hợp",
+    "status": "Sắp mở bán",
+    "badge": "Sắp ra mắt",
+    "price_from": 2800000000,
+    "price_per_m2_from": 40000000,
+    "price_per_m2_to": 75000000,
+    "available_units_count": 320,
+    "address": "Đường Trần Tấn, Hòa Xuân, Cẩm Lệ, Đà Nẵng",
+    "city_id": "DN",
+    "district_id": "DN_495",
+    "latitude": 15.9980,
+    "longitude": 108.2052,
+    "cover_image": "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&q=80",
+    "gallery": [
+      "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&q=80",
+      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&q=80",
+      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80"
+    ],
+    "overview": {
+      "scale": "117ha, đa phân khu",
+      "land_area": "117 ha",
+      "density": "22%",
+      "total_units": "8.000+ sản phẩm",
+      "handover_date": "2026–2028 theo phân khu",
+      "construction_progress": "San lấp mặt bằng, chuẩn bị khởi công"
+    },
+    "legal": {
+      "ownership_type": "Sổ hồng lâu dài",
+      "permit_number": "Đang hoàn thiện",
+      "notes": "Đang hoàn tất pháp lý 1/500"
+    },
+    "amenities": ["Bãi biển riêng", "Hồ bơi nước mặn", "Golf course", "International school", "Hospital", "Shopping mall"],
+    "contact": {"name": "Masterise Đà Nẵng", "phone": "0236 3888 999", "email": "globalcity@masterisehomes.com"},
+    "is_featured": false,
+    "units": [
+      {"unit_code": "GC-R-01-01", "block": "Riverside","floor": 1, "area": 70.0, "bedrooms": 2, "bathrooms": 2, "direction": "Đông", "view": "Sông Hàn", "price": 2800000000, "status": "available"},
+      {"unit_code": "GC-B-05-01", "block": "Beachfront","floor": 5, "area": 90.0, "bedrooms": 3, "bathrooms": 2, "direction": "Đông Nam", "view": "Biển",    "price": 4500000000, "status": "available"}
+    ]
+  },
+  {
+    "id": "PROJ-STARLAKE-HN",
+    "name": "Starlake Tây Hồ Tây",
+    "developer": "BRG Group & Sumitomo",
+    "description": "Khu đô thị kiểu mẫu Hàn Quốc – Việt Nam đầu tiên do BRG Group và Daewoo E&C phát triển. Starlake mang phong cách sống Hàn Quốc tinh tế với quy hoạch 186ha tại khu vực Tây Hồ Tây đang phát triển mạnh.",
+    "property_type": "Tổ hợp",
+    "status": "Đang mở bán",
+    "badge": null,
+    "price_from": 7200000000,
+    "price_per_m2_from": 88000000,
+    "price_per_m2_to": 130000000,
+    "available_units_count": 62,
+    "address": "Đường Võ Chí Công, Xuân Tảo, Bắc Từ Liêm, Hà Nội",
+    "city_id": "HN",
+    "district_id": "HN_021",
+    "latitude": 21.0625,
+    "longitude": 105.7985,
+    "cover_image": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80",
+    "gallery": [
+      "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80",
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80",
+      "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1200&q=80"
+    ],
+    "overview": {
+      "scale": "186ha, đô thị tổng hợp",
+      "land_area": "186 ha",
+      "density": "18%",
+      "total_units": "Đa dạng sản phẩm",
+      "handover_date": "Nhiều đợt 2024–2026",
+      "construction_progress": "Đang bàn giao giai đoạn 3"
+    },
+    "legal": {
+      "ownership_type": "Sổ đỏ lâu dài",
+      "permit_number": "BRG-STL-HN",
+      "notes": "Pháp lý hoàn chỉnh, đã bàn giao nhiều block"
+    },
+    "amenities": ["Hồ điều hòa 5ha", "Trường liên cấp Hanoi Academy", "Gym & Olympic Pool", "Trung tâm thương mại BRG", "Công viên Hàn Quốc", "Bệnh viện Đa khoa"],
+    "contact": {"name": "BRG Starlake", "phone": "024 6666 8888", "email": "starlake@brg.vn"},
+    "is_featured": false,
+    "units": [
+      {"unit_code": "SL-T1-10-01", "block": "T1", "floor": 10, "area": 82.0, "bedrooms": 2, "bathrooms": 2, "direction": "Đông Nam", "view": "Hồ",        "price": 7200000000,  "status": "available"},
+      {"unit_code": "SL-T2-15-01", "block": "T2", "floor": 15, "area": 112.0,"bedrooms": 3, "bathrooms": 3, "direction": "Nam",      "view": "Thành phố", "price": 10500000000, "status": "sold"},
+      {"unit_code": "SL-T3-20-01", "block": "T3", "floor": 20, "area": 145.0,"bedrooms": 4, "bathrooms": 3, "direction": "Tây Nam", "view": "Panorama",   "price": 15000000000, "status": "available"}
+    ]
+  },
+  {
+    "id": "PROJ-WATERFRONT-HN",
+    "name": "Masteri Waterfront",
+    "developer": "Masterise Homes",
+    "description": "Masteri Waterfront – căn hộ cao cấp tại Gia Lâm với vị trí đắc địa ngay cổng vào Vinhomes Ocean Park, view trực diện hồ bơi resort và tuyến đường ven biển hồ độc quyền.",
+    "property_type": "Căn hộ",
+    "status": "Đã bàn giao",
+    "badge": null,
+    "price_from": 4200000000,
+    "price_per_m2_from": 55000000,
+    "price_per_m2_to": 78000000,
+    "available_units_count": 18,
+    "address": "Vinhomes Ocean Park, Đa Tốn, Gia Lâm, Hà Nội",
+    "city_id": "HN",
+    "district_id": "HN_018",
+    "latitude": 20.9700,
+    "longitude": 105.9200,
+    "cover_image": "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1200&q=80",
+    "gallery": [
+      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1200&q=80",
+      "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=80",
+      "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80"
+    ],
+    "overview": {
+      "scale": "2 tòa tháp cao 28 tầng",
+      "land_area": "1,4 ha",
+      "density": "30%",
+      "total_units": "882 căn hộ",
+      "handover_date": "Đã bàn giao Q3/2023",
+      "construction_progress": "Hoàn thành 100%"
+    },
+    "legal": {
+      "ownership_type": "Sổ hồng từng căn",
+      "permit_number": "OP1-WF-GL",
+      "notes": "Đã có sổ hồng từng căn, pháp lý hoàn chỉnh"
+    },
+    "amenities": ["Biển hồ nước mặn 6,1ha", "Hồ bơi nội khu", "Gym & Yoga", "Shophouse tiện ích", "Vinschool", "Vinmec Ocean Park"],
+    "contact": {"name": "Masteri Waterfront", "phone": "0901 888 668", "email": "waterfront@masterisehomes.com"},
+    "is_featured": false,
+    "units": [
+      {"unit_code": "WF-A-12-01", "block": "A", "floor": 12, "area": 65.0, "bedrooms": 2, "bathrooms": 2, "direction": "Đông",     "view": "Biển hồ", "price": 4200000000, "status": "available"},
+      {"unit_code": "WF-B-18-01", "block": "B", "floor": 18, "area": 88.0, "bedrooms": 3, "bathrooms": 2, "direction": "Nam",      "view": "Biển hồ", "price": 5800000000, "status": "available"},
+      {"unit_code": "WF-A-25-02", "block": "A", "floor": 25, "area": 65.0, "bedrooms": 2, "bathrooms": 2, "direction": "Tây Nam", "view": "Nội khu", "price": 4500000000, "status": "sold"}
+    ]
+  }
+]
