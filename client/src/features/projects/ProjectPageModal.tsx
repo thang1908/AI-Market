@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   MapPin, 
@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { Project, PropertyListing } from '../../types';
 import { useAppState } from '../../state/useAppState';
-import { mockListings } from '../../data/mockListings';
+import { listingsApi } from '../../api/listingsApi';
 
 export const ProjectPageModal: React.FC = () => {
   const { 
@@ -42,25 +42,38 @@ export const ProjectPageModal: React.FC = () => {
   const [selectedLayoutImage, setSelectedLayoutImage] = useState<string | null>(null);
   const [selectedGalleryIndex, setSelectedGalleryIndex] = useState<number | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [relatedSecondarySales, setRelatedSecondarySales] = useState<PropertyListing[]>([]);
+  const [relatedRentals, setRelatedRentals] = useState<PropertyListing[]>([]);
+
+  // Fetch BĐS thứ cấp liên quan từ API thật
+  useEffect(() => {
+    if (!activeProject) return;
+    const fetchRelated = async () => {
+      try {
+        // Lấy BĐS cùng quận từ listings API
+        const districtId = (activeProject as any).district_id;
+        const cityId = (activeProject as any).city_id || 'HN';
+        const params = districtId
+          ? { district_id: districtId, page_size: 4 }
+          : { city_id: cityId, page_size: 4 };
+
+        const [saleRes, rentRes] = await Promise.all([
+          listingsApi.getListings({ ...params, mode: 'sale' }),
+          listingsApi.getListings({ ...params, mode: 'rent' }),
+        ]);
+        setRelatedSecondarySales(saleRes.items);
+        setRelatedRentals(rentRes.items);
+      } catch {
+        setRelatedSecondarySales([]);
+        setRelatedRentals([]);
+      }
+    };
+    fetchRelated();
+  }, [activeProject?.id]);
 
   if (!activeProject) return null;
 
   const isSaved = isProjectSaved(activeProject.id);
-
-  // Match secondary listings related to this project
-  const relatedSecondarySales = mockListings.filter(l => 
-    l.mode === 'sale' && (
-      l.projectName?.toLowerCase().includes(activeProject.name.toLowerCase().split(' ')[0]) ||
-      l.title.toLowerCase().includes(activeProject.name.toLowerCase().split(' ')[0])
-    )
-  );
-
-  const relatedRentals = mockListings.filter(l => 
-    l.mode === 'rent' && (
-      l.projectName?.toLowerCase().includes(activeProject.name.toLowerCase().split(' ')[0]) ||
-      l.title.toLowerCase().includes(activeProject.name.toLowerCase().split(' ')[0])
-    )
-  );
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);

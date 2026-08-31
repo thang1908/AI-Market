@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Search, 
@@ -20,7 +20,34 @@ import {
 } from 'lucide-react';
 import { Project, PrimaryInventoryUnit } from '../../types';
 import { useAppState } from '../../state/useAppState';
-import { mockPrimaryUnits } from '../../data/mockPrimaryInventory';
+import { projectsApi, BackendProjectUnit } from '../../api/projectsApi';
+
+// Adapter: BackendProjectUnit → PrimaryInventoryUnit (FE type)
+function mapUnit(u: BackendProjectUnit, projectId: string): PrimaryInventoryUnit {
+  const statusMap: Record<string, string> = {
+    available: 'Còn hàng',
+    deposited: 'Đang giữ chỗ',
+    sold: 'Đã bán',
+  };
+  return {
+    id: u.id,
+    projectId,
+    unitCode: u.unit_code,
+    tower: u.block || 'A',
+    floor: u.floor || 1,
+    type: `${u.bedrooms || 1}PN`,
+    area: u.area,
+    direction: u.direction || 'Đông',
+    view: u.view || '',
+    price: u.price || 0,
+    pricePerM2: u.price && u.area ? Math.round(u.price / u.area) : 0,
+    status: (statusMap[u.status] || 'Còn hàng') as any,
+    floorPlan: u.floor_plan_image || '',
+    bedrooms: u.bedrooms || 1,
+    bathrooms: u.bathrooms || 1,
+    phase: 'Giai đoạn 1',
+  } as any;
+}
 
 export const ProjectInventoryModal: React.FC = () => {
   const { 
@@ -42,11 +69,20 @@ export const ProjectInventoryModal: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<'price_asc' | 'price_desc' | 'area_desc' | 'floor_asc'>('price_asc');
+  const [projectUnits, setProjectUnits] = useState<PrimaryInventoryUnit[]>([]);
+  const [isLoadingUnits, setIsLoadingUnits] = useState(false);
+
+  // Fetch units từ API khi mở modal
+  useEffect(() => {
+    if (!isInventoryOpen || !inventoryProject) return;
+    setIsLoadingUnits(true);
+    projectsApi.getUnits(inventoryProject.id, { page_size: 100 })
+      .then(res => setProjectUnits(res.items.map(u => mapUnit(u, inventoryProject.id))))
+      .catch(() => setProjectUnits([]))
+      .finally(() => setIsLoadingUnits(false));
+  }, [isInventoryOpen, inventoryProject?.id]);
 
   if (!isInventoryOpen || !inventoryProject) return null;
-
-  // Filter units belonging to this project
-  const projectUnits = mockPrimaryUnits.filter(u => u.projectId === inventoryProject.id);
 
   // Available phases & towers in this project
   const phases = Array.from(new Set(projectUnits.map(u => u.phaseName).filter(Boolean)));
