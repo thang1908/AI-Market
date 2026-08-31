@@ -1,7 +1,24 @@
 import React from 'react';
-import { Heart, MapPin, Bed, Bath, Maximize2, Clock, ThumbsUp, MessageSquare, PhoneCall } from 'lucide-react';
+import { Heart, MapPin, Bed, Bath, Maximize2, Clock, ThumbsUp, PhoneCall } from 'lucide-react';
 import { PropertyListing } from '../../types';
 import { useAppState } from '../../state/useAppState';
+
+// Format ISO date → thời gian tương đối hoặc ngày tháng
+function formatRelativeDate(isoStr: string): string {
+  try {
+    const d = new Date(isoStr);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffDays = Math.floor(diffMs / 86400000);
+    if (diffDays === 0) return 'Hôm nay';
+    if (diffDays === 1) return 'Hôm qua';
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} tuần trước`;
+    return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch {
+    return isoStr;
+  }
+}
 
 interface PropertyCardProps {
   listing: PropertyListing;
@@ -61,10 +78,6 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ listing, onOpenDetai
             >
               {listing.mode === 'sale' ? 'Bán' : 'Cho thuê'}
             </span>
-
-            <span className="bg-slate-900/80 backdrop-blur-xs text-slate-200 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md">
-              DEMO DATA
-            </span>
           </div>
 
           {/* Heart / Save Button */}
@@ -85,8 +98,9 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ listing, onOpenDetai
           {/* Updated time tag bottom */}
           <div className="absolute bottom-2.5 left-3 bg-slate-900/70 backdrop-blur-xs text-white text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 font-medium">
             <Clock className="w-3 h-3 text-slate-300" />
-            <span>{listing.updatedAt}</span>
+            <span>{formatRelativeDate(listing.updatedAt)}</span>
           </div>
+
         </div>
 
         {/* Card Body */}
