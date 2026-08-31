@@ -16,10 +16,11 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json",
     )
 
-    # 1. CORS Middleware
+    # 1. CORS Middleware (Cho phép localhost, 127.0.0.1, IP LAN và mọi port trong môi trường dev)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
+        allow_origin_regex=r"^https?://.*$",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
